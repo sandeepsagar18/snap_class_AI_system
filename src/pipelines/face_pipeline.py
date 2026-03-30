@@ -64,7 +64,7 @@ def get_trained_model():
     except ValueError:
         pass
 
-    return {'clf': clf, 'X':x, "y":y}
+    return {'clf': clf, 'X':X, "y":y}
 
 
 def train_classifier():
