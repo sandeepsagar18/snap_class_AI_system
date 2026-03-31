@@ -80,6 +80,8 @@ def teacher_dashboard():
 def teacher_tab_take_attendance():
     st.header('Take AI Attendance')
 
+
+
 def teacher_tab_manage_subjects():
     teacher_id = st.session_state.teacher_data['teacher_id']
     col1, col2 = st.columns(2)
