@@ -1,15 +1,30 @@
+# Environment & Secrets
 .env
-.vscode
+.env.local
+*.env
+.streamlit/
+*.toml
 
+# Dependencies
+node_modules/
+venv/
+env/
+.venv/
 
+# Build outputs
+dist/
+build/
 *.pyc
-.DS_Store
 __pycache__/
 
-venv/
+# Binaries & Logs
+cloudflared.exe
+*.exe
+*.log
+.tunnel_url
 
-.streamlit/
-
-
-
-dist/
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
