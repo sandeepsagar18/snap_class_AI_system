@@ -95,7 +95,6 @@ export default function StartAttendanceConfigModal({
 
     setCreating(true)
     try {
-      // 1. Create active lecture session in backend
       const createdSession = await createLectureSession({
         teacher_name: teacherName.trim(),
         faculty_name: facultyName.trim(),
@@ -137,53 +136,53 @@ export default function StartAttendanceConfigModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-      <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto bg-white">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all cursor-pointer"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-white">Start Attendance Session</h3>
-            <p className="text-xs text-slate-400">Configure lecture details, teacher name, and student registration QR</p>
+            <h3 className="font-bold text-lg text-slate-900">Start Attendance Session</h3>
+            <p className="text-xs text-slate-500">Configure lecture details, teacher name, and student registration QR</p>
           </div>
         </div>
 
         <form onSubmit={handleLaunch} className="space-y-4">
           {/* Teacher and Faculty Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Teacher / Professor Name *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Teacher / Professor Name *</label>
               <div className="relative">
-                <User className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3" />
+                <User className="w-4 h-4 text-indigo-600 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. Prof. Sharma"
                   value={teacherName}
                   onChange={(e) => setTeacherName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Faculty / Department Name *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Faculty / Department Name *</label>
               <div className="relative">
-                <Building className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3" />
+                <Building className="w-4 h-4 text-indigo-600 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. Department of Computer Science & Engg"
                   value={facultyName}
                   onChange={(e) => setFacultyName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
                   required
                 />
               </div>
@@ -192,11 +191,11 @@ export default function StartAttendanceConfigModal({
 
           {existingSubjects.length > 0 && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Quick Select Saved Subject</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Quick Select Saved Subject</label>
               <select
                 onChange={(e) => handleSubjectSelect(e.target.value)}
                 defaultValue={initialSubject?.id || ''}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
               >
                 <option value="">-- Custom / New Subject Session --</option>
                 {existingSubjects.map((sub) => (
@@ -210,30 +209,30 @@ export default function StartAttendanceConfigModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Subject Name *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Subject Name *</label>
               <div className="relative">
-                <BookOpen className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <BookOpen className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. Machine Learning / Logic Programming"
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Subject Code *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Subject Code *</label>
               <div className="relative">
-                <Hash className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. CS404 / CS405"
                   value={subjectCode}
                   onChange={(e) => setSubjectCode(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono font-bold"
                   required
                 />
               </div>
@@ -242,77 +241,77 @@ export default function StartAttendanceConfigModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Course</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Course</label>
               <input
                 type="text"
                 placeholder="e.g. B.Tech / BCA"
                 value={course}
                 onChange={(e) => setCourse(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Branch / Department</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Branch / Department</label>
               <div className="relative">
-                <GitBranch className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <GitBranch className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. Computer Science"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Class / Year</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Class / Year</label>
               <div className="relative">
-                <Layers className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Layers className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. 4th Year"
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Section</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Section</label>
             <div className="relative">
-              <Users className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <Users className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
                 placeholder="e.g. Section A / Section B"
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
           </div>
 
           {/* Session Mode Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Choose Attendance Mode</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Choose Attendance Mode</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setSessionType('live')}
                 className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                   sessionType === 'live'
-                    ? 'bg-indigo-600/15 border-indigo-500 text-white shadow-lg shadow-indigo-500/10'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-sm'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Video className={`w-4 h-4 ${sessionType === 'live' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  <Video className={`w-4 h-4 ${sessionType === 'live' ? 'text-indigo-600' : 'text-slate-500'}`} />
                   <span className="text-xs font-bold">30-Min Live Stream</span>
                 </div>
-                <p className="text-[11px] text-slate-400">Continuous video recognition from classroom webcam / CCTV stream.</p>
+                <p className="text-[11px] text-slate-500 font-medium">Continuous video recognition from classroom webcam / stream.</p>
               </button>
 
               <button
@@ -320,46 +319,46 @@ export default function StartAttendanceConfigModal({
                 onClick={() => setSessionType('photo')}
                 className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                   sessionType === 'photo'
-                    ? 'bg-indigo-600/15 border-indigo-500 text-white shadow-lg shadow-indigo-500/10'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-sm'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Camera className={`w-4 h-4 ${sessionType === 'photo' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  <Camera className={`w-4 h-4 ${sessionType === 'photo' ? 'text-indigo-600' : 'text-slate-500'}`} />
                   <span className="text-xs font-bold">Classroom Photo Snapshot</span>
                 </div>
-                <p className="text-[11px] text-slate-400">Capture single classroom photo to scan all student faces at once.</p>
+                <p className="text-[11px] text-slate-500 font-medium">Capture single classroom photo to scan all student faces at once.</p>
               </button>
             </div>
           </div>
 
           {/* Live Roster Target Preview */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <Users className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                   Target Student Roster in Database
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold">
                 {loadingStudents ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : `${matchingStudents.length} Students`}
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              ⚡ <b>Attendance Rule:</b> If student image is found/matched during lecture ➔ <span className="text-emerald-400 font-semibold">PRESENT</span>; otherwise ➔ <span className="text-rose-400 font-semibold">ABSENT</span>. Unregistered students can scan the generated in-class QR to register manually.
+            <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+              ⚡ <b>Attendance Rule:</b> If student image is matched during lecture ➔ <span className="text-emerald-700 font-bold">PRESENT</span>; otherwise ➔ <span className="text-rose-700 font-bold">ABSENT</span>. Unregistered students can scan the in-class QR to register on mobile.
             </p>
 
             {matchingStudents.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {matchingStudents.slice(0, 6).map((st) => (
-                  <span key={st.id} className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[10px] text-slate-300 font-medium">
+                  <span key={st.id} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] text-slate-800 font-bold">
                     {st.name} {st.roll_no ? `(${st.roll_no})` : ''}
                   </span>
                 ))}
                 {matchingStudents.length > 6 && (
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 text-[10px] font-semibold">
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-bold">
                     +{matchingStudents.length - 6} more
                   </span>
                 )}
@@ -367,18 +366,18 @@ export default function StartAttendanceConfigModal({
             )}
           </div>
 
-          <div className="flex gap-3 pt-3 border-t border-slate-800">
+          <div className="flex gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={creating || matchingStudents.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer disabled:opacity-50"
             >
               {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
               Launch Attendance & Create Session Card
