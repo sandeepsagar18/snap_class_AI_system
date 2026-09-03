@@ -7,10 +7,29 @@ def get_teacher_by_username(username):
     response = supabase.table('teachers').select('*').eq('username', username).execute()
     return response.data
 
-def create_teacher(name, username, password):
-    data = {'name': name, 'username': username, 'password': password}
-    response = supabase.table('teachers').insert(data).execute()
-    return response.data
+def create_teacher(name, username, password, qualification=None, department=None, designation=None, photo_url=None):
+    data = {
+        'name': name,
+        'username': username,
+        'password': password,
+        'qualification': qualification,
+        'department': department,
+        'designation': designation,
+        'photo_url': photo_url
+    }
+    clean_data = {k: v for k, v in data.items() if v is not None}
+    clean_data['name'] = name
+    clean_data['username'] = username
+    clean_data['password'] = password
+    
+    try:
+        response = supabase.table('teachers').insert(clean_data).execute()
+        return response.data
+    except Exception as e:
+        # Fallback if custom columns are not yet present in Postgres table
+        fallback = {'name': name, 'username': username, 'password': password}
+        response = supabase.table('teachers').insert(fallback).execute()
+        return response.data
 
 def get_teacher_subjects(teacher_id):
     response = supabase.table('subjects').select('*').eq('teacher_id', teacher_id).execute()

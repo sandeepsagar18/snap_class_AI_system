@@ -126,11 +126,15 @@ def get_network_ip():
 # --- TEACHER AUTH & DASHBOARD ---
 
 @app.post("/api/teacher/signup")
-def teacher_signup(payload: Dict[str, Any] = Body(...)):
-    name = payload.get("name")
-    username = payload.get("username")
-    password = payload.get("password")
-    
+async def teacher_signup(
+    name: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    qualification: Optional[str] = Form(None),
+    department: Optional[str] = Form(None),
+    designation: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None)
+):
     if not name or not username or not password:
         raise HTTPException(status_code=400, detail="Missing required fields")
     
@@ -138,12 +142,38 @@ def teacher_signup(payload: Dict[str, Any] = Body(...)):
     if existing:
         raise HTTPException(status_code=400, detail="A teacher with this username already exists")
     
+    photo_url = None
+    if file:
+        try:
+            contents = await file.read()
+            b64_data = base64.b64encode(contents).decode("utf-8")
+            photo_url = f"data:image/jpeg;base64,{b64_data}"
+        except Exception as e:
+            print("Teacher photo processing warning:", e)
+
     hashed = bcrypt.hashpw(password.strip().encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    created = create_teacher(name.strip(), username.strip(), hashed)
+    created = create_teacher(
+        name=name.strip(),
+        username=username.strip(),
+        password=hashed,
+        qualification=qualification.strip() if qualification else None,
+        department=department.strip() if department else None,
+        designation=designation.strip() if designation else None,
+        photo_url=photo_url
+    )
     if not created:
         raise HTTPException(status_code=500, detail="Failed to create teacher account")
     
-    return {"success": True, "teacher": created[0]}
+    teacher_obj = created[0]
+    # Ensure profile details are stored locally too
+    _save_local_credential(
+        student_id=teacher_obj.get("id"),
+        email=username.strip(),
+        password_hash=hashed,
+        name=name.strip()
+    )
+    
+    return {"success": True, "teacher": teacher_obj}
 
 @app.post("/api/teacher/login")
 def teacher_login(payload: Dict[str, Any] = Body(...)):

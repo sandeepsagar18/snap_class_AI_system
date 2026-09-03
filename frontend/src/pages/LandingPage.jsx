@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { teacherLogin, teacherSignup, studentLogin, registerStudentFull } from '../lib/api'
 import CameraCapture from '../components/CameraCapture'
-import { Sparkles, ArrowRight, School, GraduationCap, Lock, User, Mail, Hash, Calendar, Layers, GitBranch, Users, Loader2, ShieldCheck, AlertCircle, CheckCircle, Zap, Shield, QrCode } from 'lucide-react'
+import { Sparkles, ArrowRight, School, GraduationCap, Lock, User, Mail, Hash, Calendar, Layers, GitBranch, Users, Loader2, ShieldCheck, AlertCircle, CheckCircle, Zap, Shield, QrCode, Award, Building, Briefcase } from 'lucide-react'
 
 export default function LandingPage() {
   const [role, setRole] = useState('teacher') // 'teacher' | 'student'
@@ -13,6 +13,10 @@ export default function LandingPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [qualification, setQualification] = useState('')
+  const [department, setDepartment] = useState('')
+  const [designation, setDesignation] = useState('Assistant Professor')
+  const [teacherPhotoBlob, setTeacherPhotoBlob] = useState(null)
 
   // Student Form State
   const [studentEmail, setStudentEmail] = useState('')
@@ -39,9 +43,17 @@ export default function LandingPage() {
     try {
       if (isSignUp) {
         if (!name.trim() || !username.trim() || !password.trim()) {
-          throw new Error('Please fill in all fields')
+          throw new Error('Please fill in all required fields (Name, Username, Password)')
         }
-        const teacher = await teacherSignup(name, username, password)
+        const teacher = await teacherSignup({
+          name: name.trim(),
+          username: username.trim(),
+          password: password.trim(),
+          qualification: qualification.trim() || undefined,
+          department: department.trim() || undefined,
+          designation: designation.trim() || undefined
+        }, teacherPhotoBlob)
+
         login(teacher, 'teacher')
       } else {
         if (!username.trim() || !password.trim()) {
@@ -102,7 +114,7 @@ export default function LandingPage() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
-        {/* LEFT COLUMN: HERO HEADLINE & HIGHLIGHTS (Crisp Dark Text on Light Canvas) */}
+        {/* LEFT COLUMN: HERO HEADLINE & HIGHLIGHTS */}
         <div className="lg:col-span-6 space-y-6 text-left">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Next-Gen Attendance Automation
@@ -140,9 +152,9 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: EXPANDED AUTHENTICATION BOX (Crisp High-Contrast White Surface) */}
+        {/* RIGHT COLUMN: EXPANDED AUTHENTICATION BOX */}
         <div className="lg:col-span-6 w-full flex justify-center lg:justify-end">
-          <div className={`w-full ${isStudentRegister ? 'max-w-xl' : 'max-w-lg'} min-h-[520px] flex flex-col justify-between rounded-3xl p-7 sm:p-10 border border-slate-200/90 shadow-xl relative transition-all duration-300 bg-white`}>
+          <div className={`w-full ${(isStudentRegister || (role === 'teacher' && isSignUp)) ? 'max-w-xl' : 'max-w-lg'} min-h-[520px] flex flex-col justify-between rounded-3xl p-7 sm:p-10 border border-slate-200/90 shadow-xl relative transition-all duration-300 bg-white`}>
             <div>
               {/* Portal switch tabs */}
               <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 mb-7">
@@ -180,10 +192,10 @@ export default function LandingPage() {
               )}
 
               {role === 'teacher' ? (
-                <form onSubmit={handleTeacherAuth} className="space-y-5">
+                <form onSubmit={handleTeacherAuth} className="space-y-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      {isSignUp ? 'Create Teacher Account' : 'Sign In as Teacher'}
+                      {isSignUp ? 'New Faculty / Teacher Registration' : 'Sign In as Teacher'}
                     </span>
                     <button
                       type="button"
@@ -194,49 +206,137 @@ export default function LandingPage() {
                     </button>
                   </div>
 
-                  {isSignUp && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2">Full Name</label>
-                      <div className="relative">
-                        <User className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
-                        <input
-                          type="text"
-                          placeholder="Prof. Alex Smith"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
-                        />
+                  {isSignUp ? (
+                    <div className="space-y-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Full Name & Title *</label>
+                          <div className="relative">
+                            <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="text"
+                              placeholder="Dr. Alex Smith"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Username / Faculty ID *</label>
+                          <div className="relative">
+                            <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="text"
+                              placeholder="alex.smith / FAC012"
+                              value={username}
+                              onChange={(e) => setUsername(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Highest Qualification</label>
+                          <div className="relative">
+                            <Award className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="text"
+                              placeholder="e.g. Ph.D (AI & ML) / M.Tech"
+                              value={qualification}
+                              onChange={(e) => setQualification(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Department / Faculty</label>
+                          <div className="relative">
+                            <Building className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="text"
+                              placeholder="e.g. Computer Science & Engg"
+                              value={department}
+                              onChange={(e) => setDepartment(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Designation / Role</label>
+                          <div className="relative">
+                            <Briefcase className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="text"
+                              placeholder="e.g. Associate Professor / HOD"
+                              value={designation}
+                              onChange={(e) => setDesignation(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Create Password *</label>
+                          <div className="relative">
+                            <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                              type="password"
+                              placeholder="••••••••"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Live Faculty Photo (Profile)</label>
+                        <CameraCapture onCapture={(blob) => setTeacherPhotoBlob(blob)} label="Capture Faculty Photo" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2">Username / Faculty ID</label>
+                        <div className="relative">
+                          <User className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                          <input
+                            type="text"
+                            placeholder="teacher_username or email"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2">Password</label>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                          <input
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2">Username / Email</label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
-                      <input
-                        type="text"
-                        placeholder="teacher_username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2">Password</label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
-                      />
-                    </div>
-                  </div>
 
                   <div className="pt-2">
                     <button
@@ -248,7 +348,7 @@ export default function LandingPage() {
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
-                          <span>{isSignUp ? 'Create Account' : 'Enter Dashboard'}</span>
+                          <span>{isSignUp ? 'Complete Registration & Access Dashboard' : 'Enter Dashboard'}</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}

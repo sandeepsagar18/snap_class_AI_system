@@ -17,12 +17,22 @@ export async function getNetworkIp() {
   }
 }
 
-// --- AUTH API ---
-export async function teacherSignup(name, username, password) {
+export async function teacherSignup(teacherData, photoBlob = null) {
+  const formData = new FormData()
+  formData.append('name', teacherData.name)
+  formData.append('username', teacherData.username)
+  formData.append('password', teacherData.password)
+  if (teacherData.qualification) formData.append('qualification', teacherData.qualification)
+  if (teacherData.department) formData.append('department', teacherData.department)
+  if (teacherData.designation) formData.append('designation', teacherData.designation)
+
+  if (photoBlob) {
+    formData.append('file', photoBlob, 'teacher_photo.jpg')
+  }
+
   const res = await fetch(`${API_BASE_URL}/teacher/signup`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, username, password }),
+    body: formData,
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.detail || 'Sign up failed')
