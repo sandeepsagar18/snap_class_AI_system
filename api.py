@@ -863,24 +863,30 @@ async def register_student_for_lecture(
             name=name.strip()
         )
 
+    # Enroll student in the subject permanently (via subject_id and subject_code)
+    target_subject_id = session.get("id") or (session.get("session_id") if not session.get("session_id", "").startswith("lec_") else None)
+    
+    if not target_subject_id and session.get("subject_code"):
+        try:
+            sub_res = supabase.table("subjects").select("id").eq("subject_code", session.get("subject_code")).execute()
+            if sub_res.data and len(sub_res.data) > 0:
+                target_subject_id = sub_res.data[0]["id"]
+        except Exception:
+            pass
+
+    if target_subject_id and student_obj.get("id"):
+        try:
+            enroll_student_to_subject(student_obj["id"], target_subject_id)
+        except Exception as e:
+            print("Permanent subject enrollment note:", e)
+
     # Retrain classifier with new live face embedding
     if face_embedding:
         train_classifier()
 
-    # Enroll student in the subject if subject exists in DB
-    subject_code = session.get("subject_code")
-    if subject_code:
-        try:
-            sub_res = supabase.table("subjects").select("id").eq("subject_code", subject_code).execute()
-            if sub_res.data and len(sub_res.data) > 0:
-                sub_id = sub_res.data[0]["id"]
-                enroll_student_to_subject(student_obj["id"], sub_id)
-        except Exception:
-            pass
-
-    # Add student into active lecture roster if not already present
+    # Add student into active lecture roster permanently if not already present
     enriched = _enrich_student_dict(student_obj)
-    if not any(str(s.get("id")) == str(enriched.get("id")) for s in session.get("students", [])):
+    if not any(str(s.get("id")) == str(enriched.get("id")) or str(s.get("roll_no")) == str(enriched.get("roll_no")) for s in session.get("students", [])):
         session["students"].append(enriched)
 
     return {
