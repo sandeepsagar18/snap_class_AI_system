@@ -116,27 +116,34 @@ def get_network_ip():
     ip_list.sort(key=ip_priority)
     primary_ip = ip_list[0] if ip_list else "127.0.0.1"
     
-    # Dynamically detect active public tunnel URL from log or file
+    # Dynamically detect active public tunnel URL from file or task logs
     public_tunnel = None
-    log_file = os.path.join(os.path.dirname(__file__), "tunnel_stderr.log")
-    if os.path.exists(log_file):
+    tunnel_file = os.path.join(os.path.dirname(__file__), ".tunnel_url")
+    if os.path.exists(tunnel_file):
         try:
-            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-                matches = re.findall(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", content)
-                if matches:
-                    public_tunnel = matches[-1]
+            with open(tunnel_file, "r", encoding="utf-8") as f:
+                val = f.read().strip()
+                if val.startswith("https://"):
+                    public_tunnel = val
         except Exception:
             pass
 
     if not public_tunnel:
-        tunnel_file = os.path.join(os.path.dirname(__file__), ".tunnel_url")
-        if os.path.exists(tunnel_file):
-            try:
-                with open(tunnel_file, "r") as f:
-                    public_tunnel = f.read().strip()
-            except Exception:
-                pass
+        # Check task logs or tunnel_stderr.log
+        for test_path in [
+            os.path.join(os.path.dirname(__file__), "tunnel_stderr.log"),
+            r"C:\Users\asus\.gemini\antigravity\brain\160b792d-7710-4662-9b21-140b0c5faec3\.system_generated\tasks\task-2539.log"
+        ]:
+            if os.path.exists(test_path):
+                try:
+                    with open(test_path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        matches = re.findall(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", content)
+                        if matches:
+                            public_tunnel = matches[-1]
+                            break
+                except Exception:
+                    pass
 
     if not public_tunnel:
         public_tunnel = f"http://{primary_ip}:5173"
