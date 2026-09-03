@@ -90,8 +90,11 @@ export default function TeacherDashboard() {
     setIsQRModalOpen(true)
   }
 
-  const handleStartAttendanceSessionFromQR = (session) => {
-    setLiveSubject(session)
+  const handleStartAttendanceSessionFromQR = (studentsList) => {
+    if (studentsList && studentsList.length > 0) {
+      setEnrolledStudents(studentsList)
+    }
+    setLiveSubject(activeLectureSession)
   }
 
   const handleStudentRegisteredInLecture = (newStudent) => {
@@ -120,11 +123,13 @@ export default function TeacherDashboard() {
     try {
       const students = await getSubjectStudents(subject.id)
       setEnrolledStudents(students || [])
-      setLiveSubject(sessionObj)
     } catch (err) {
       console.error('Error fetching students:', err)
-      setLiveSubject(sessionObj)
+      setEnrolledStudents([])
     }
+
+    // Directly show the Projector QR modal for students to scan first!
+    setIsQRModalOpen(true)
   }
 
   const openFaceAttendance = async (subject) => {
