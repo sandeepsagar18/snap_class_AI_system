@@ -94,21 +94,19 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
         const video = videoRef.current
         const canvas = canvasRef.current
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          // Optimized frame dimension for ultra-fast AI inference
-          canvas.width = 640
-          canvas.height = 480
+          canvas.width = 960
+          canvas.height = 720
           const ctx = canvas.getContext('2d')
-          ctx.drawImage(video, 0, 0, 640, 480)
+          ctx.drawImage(video, 0, 0, 960, 720)
 
           imageBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.8)
+            canvas.toBlob(resolve, 'image/jpeg', 0.9)
           })
         }
       }
 
-      if (imageBlob && students && students.length > 0) {
-        const studentIds = students.map(s => s.id)
-        const res = await predictFaceAttendance(imageBlob, studentIds, subject?.id || subject?.session_id)
+      if (imageBlob) {
+        const res = await predictFaceAttendance(imageBlob)
         const detectedIds = res?.present_student_ids || []
 
         if (detectedIds && detectedIds.length > 0) {
@@ -116,8 +114,11 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
           setPresentMap(prev => {
             const next = { ...prev }
             detectedIds.forEach(id => {
-              if (!next[id]) {
-                next[id] = nowStr
+              next[id] = next[id] || nowStr
+              // Also map against stringified id
+              const matchingStudent = (students || []).find(s => String(s.id) === String(id) || String(s.student_id) === String(id))
+              if (matchingStudent && matchingStudent.id) {
+                next[matchingStudent.id] = next[matchingStudent.id] || nowStr
               }
             })
             return next
