@@ -63,11 +63,7 @@ export default function StudentDashboard() {
   }, [user?.id])
 
   const handleJoinSubject = async () => {
-    if (!joinCodeInput.trim()) {
-      setJoinMsg({ type: 'error', text: 'Please enter a join code' })
-      return
-    }
-
+    if (!joinCodeInput.trim()) return
     setJoining(true)
     setJoinMsg({ type: '', text: '' })
 
@@ -83,11 +79,11 @@ export default function StudentDashboard() {
     }
   }
 
-  const handleFaceUpload = async (imageBlob) => {
+  const handleFaceUpload = async (blob) => {
     setBioLoading(true)
     try {
-      await extractFaceEmbedding(imageBlob, user.id)
-      alert('Face embedding registered successfully!')
+      await extractFaceEmbedding(blob, user.id)
+      alert('Face biometrics registered successfully!')
       setBioModal(null)
       fetchStudentData()
     } catch (err) {
@@ -115,13 +111,13 @@ export default function StudentDashboard() {
   const hasVoice = !!user?.voice_embedding
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="space-y-6 pb-12">
       {/* Header Banner & Student Profile Card */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-start sm:items-center gap-5">
+      <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="flex items-start sm:items-center gap-4">
           {/* Student Profile Photo */}
           <div className="relative group shrink-0">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 border-2 border-indigo-500/30 flex items-center justify-center shadow-xl">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-slate-100 border border-indigo-200 flex items-center justify-center shadow-xs">
               {user?.photo_url ? (
                 <img
                   src={user.photo_url}
@@ -129,57 +125,52 @@ export default function StudentDashboard() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center text-slate-500 text-center p-2">
-                  <User className="w-8 h-8 text-slate-600 mb-1" />
-                  <span className="text-[10px]">No Photo</span>
+                <div className="flex flex-col items-center justify-center text-slate-400 text-center p-2">
+                  <User className="w-6 h-6 text-slate-400 mb-0.5" />
+                  <span className="text-[9px] font-semibold">No Photo</span>
                 </div>
               )}
             </div>
             <button
               onClick={() => setBioModal('face')}
-              className="absolute -bottom-2 -right-2 p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all cursor-pointer"
+              className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all cursor-pointer"
               title="Update Face Photo"
             >
-              <Camera className="w-3.5 h-3.5" />
+              <Camera className="w-3 h-3" />
             </button>
           </div>
 
           <div>
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold tracking-wider uppercase mb-1">
-              <Sparkles className="w-4 h-4" /> Verified Student Profile
+            <div className="flex items-center gap-1.5 text-indigo-600 text-[11px] font-bold tracking-wider uppercase mb-0.5">
+              <Sparkles className="w-3.5 h-3.5" /> Verified Student Profile
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {user?.name}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500">
               {user?.email ? user.email : (user?.roll_no ? `Roll Number: ${user.roll_no}` : 'Student Portal')}
             </p>
 
             {/* Academic Info Chips */}
-            <div className="flex flex-wrap items-center gap-2 mt-3 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5 text-xs">
               {user?.roll_no && (
-                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono font-semibold">
+                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono font-bold text-[11px]">
                   Roll: {user.roll_no}
                 </span>
               )}
               {user?.course && (
-                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold">
-                  Course: {user.course}
+                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-[11px]">
+                  {user.course}
                 </span>
               )}
               {user?.branch && (
-                <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
-                  Branch: {user.branch}
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium">
+                  {user.branch}
                 </span>
               )}
               {user?.class_name && (
-                <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
-                  Class: {user.class_name} {user?.section ? `(${user.section})` : ''}
-                </span>
-              )}
-              {user?.dob && (
-                <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-                  DOB: {user.dob}
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium">
+                  {user.class_name} {user?.section ? `(${user.section})` : ''}
                 </span>
               )}
             </div>
@@ -187,123 +178,123 @@ export default function StudentDashboard() {
         </div>
 
         {/* Action Pills */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => setIsEditProfileOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/30 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-sm shadow-indigo-500/20 cursor-pointer"
           >
-            <Edit3 className="w-4 h-4" />
-            <span>Edit Profile & Photo</span>
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Edit Profile</span>
           </button>
 
           <button
             onClick={() => setBioModal('face')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
               hasFace
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
             }`}
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-3.5 h-3.5" />
             <span>Face AI: {hasFace ? 'Active' : 'Missing'}</span>
           </button>
 
           <button
             onClick={() => setBioModal('voice')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
               hasVoice
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
             }`}
           >
-            <Mic className="w-4 h-4" />
+            <Mic className="w-3.5 h-3.5" />
             <span>Voice AI: {hasVoice ? 'Active' : 'Missing'}</span>
           </button>
         </div>
       </div>
 
       {/* Complete Student Academic Identity Card */}
-      <div className="glass-panel rounded-3xl p-6 border border-slate-800 shadow-xl">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+      <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-indigo-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Registered Student Academic Record</h2>
+            <User className="w-4 h-4 text-indigo-600" />
+            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Registered Student Academic Record</h2>
           </div>
           <button
             onClick={() => setIsEditProfileOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
           >
-            <Edit3 className="w-3.5 h-3.5" />
+            <Edit3 className="w-3 h-3" />
             Edit Info
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">College Email</div>
-            <div className="text-xs font-bold font-mono text-indigo-400 mt-0.5 truncate" title={user?.email}>{user?.email || 'Not set'}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">College Email</div>
+            <div className="text-xs font-bold font-mono text-indigo-600 mt-0.5 truncate" title={user?.email}>{user?.email || 'Not set'}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">Roll Number</div>
-            <div className="text-sm font-bold font-mono text-white mt-0.5">{user?.roll_no || 'Not set'}</div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">Roll Number</div>
+            <div className="text-xs font-bold font-mono text-slate-900 mt-0.5">{user?.roll_no || 'Not set'}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">Course & Branch</div>
-            <div className="text-xs font-bold text-slate-200 mt-0.5">{user?.course || 'General'} {user?.branch ? `(${user.branch})` : ''}</div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">Course & Branch</div>
+            <div className="text-xs font-bold text-slate-800 mt-0.5">{user?.course || 'General'} {user?.branch ? `(${user.branch})` : ''}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">Class / Year</div>
-            <div className="text-sm font-bold text-slate-200 mt-0.5">{user?.class_name || 'Not set'}</div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">Class / Year</div>
+            <div className="text-xs font-bold text-slate-800 mt-0.5">{user?.class_name || 'Not set'}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">Section</div>
-            <div className="text-sm font-bold text-slate-200 mt-0.5">{user?.section || 'Not set'}</div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">Section</div>
+            <div className="text-xs font-bold text-slate-800 mt-0.5">{user?.section || 'Not set'}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-            <div className="text-[11px] text-slate-500 uppercase font-semibold">Date of Birth</div>
-            <div className="text-sm font-bold text-slate-200 mt-0.5">{user?.dob || 'Not set'}</div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-[10px] text-slate-500 uppercase font-bold">Date of Birth</div>
+            <div className="text-xs font-bold text-slate-800 mt-0.5">{user?.dob || 'Not set'}</div>
           </div>
         </div>
       </div>
 
       {/* Join Subject Card */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800">
-        <h2 className="text-xl font-bold text-white tracking-tight mb-1">Join a New Class</h2>
-        <p className="text-xs text-slate-400 mb-4">Enter the join code shared by your teacher</p>
+      <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
+        <h2 className="text-base font-bold text-slate-900 tracking-tight mb-0.5">Join a New Class</h2>
+        <p className="text-xs text-slate-500 mb-3">Enter the join code shared by your teacher</p>
 
         {joinMsg.text && (
-          <div className={`mb-4 p-3 rounded-xl border text-xs ${
+          <div className={`mb-3 p-2.5 rounded-xl border text-xs font-medium ${
             joinMsg.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              : 'bg-rose-50 border-rose-200 text-rose-700'
           }`}>
             {joinMsg.text}
           </div>
         )}
 
-        <form onSubmit={(e) => { e.preventDefault(); handleJoinSubject(); }} className="flex flex-col sm:flex-row gap-3 max-w-xl">
+        <form onSubmit={(e) => { e.preventDefault(); handleJoinSubject(); }} className="flex flex-col sm:flex-row gap-2 max-w-xl">
           <div className="relative flex-1">
-            <Hash className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <input
               type="text"
               placeholder="Paste 36-character Subject Code"
               value={joinCodeInput}
               onChange={(e) => setJoinCodeInput(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={joining}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50 shrink-0"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-sm shadow-indigo-500/20 cursor-pointer disabled:opacity-50 shrink-0"
           >
-            {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {joining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
             Join Class
           </button>
         </form>
@@ -311,24 +302,24 @@ export default function StudentDashboard() {
 
       {/* Enrolled Subjects List */}
       <div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Your Enrolled Classes</h2>
-            <p className="text-xs text-slate-400">Courses and attendance history</p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Your Enrolled Classes</h2>
+            <p className="text-xs text-slate-500">Courses and attendance history</p>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600">
             {enrolledSubjects.length} Classes Enrolled
           </span>
         </div>
 
         {enrolledSubjects.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-10 text-center border border-slate-800/80">
-            <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-            <h3 className="text-sm font-bold text-slate-200">You haven't joined any classes yet</h3>
-            <p className="text-xs text-slate-400 mt-1">Use the join code provided by your teacher above to enroll.</p>
+          <div className="glass-panel rounded-2xl p-10 text-center border border-slate-200 bg-white">
+            <BookOpen className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+            <h3 className="text-sm font-bold text-slate-800">You haven't joined any classes yet</h3>
+            <p className="text-xs text-slate-500 mt-1">Use the join code provided by your teacher above to enroll.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {enrolledSubjects.map((sub) => {
               const myLogs = attendanceRecords.filter(r => r.subject_id === sub.id)
               const presentCount = myLogs.filter(r => r.status === 'present').length
@@ -338,31 +329,31 @@ export default function StudentDashboard() {
               return (
                 <div
                   key={sub.id}
-                  className="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col justify-between"
+                  className="glass-card rounded-2xl p-5 border border-slate-200 flex flex-col justify-between bg-white shadow-xs"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200">
                         {sub.subject_code}
                       </span>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
                         pct >= 75
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
                       }`}>
                         {pct}% Attendance
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-white mb-1">{sub.name}</h3>
-                    <p className="text-xs text-slate-400">Section: {sub.section}</p>
+                    <h3 className="text-base font-bold text-slate-900 mb-0.5">{sub.name}</h3>
+                    <p className="text-xs text-slate-500">Section: <span className="text-slate-700 font-semibold">{sub.section}</span></p>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                    <div>Attended: <span className="text-white font-semibold">{presentCount}</span> / {totalClasses} classes</div>
-                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <div>Attended: <span className="text-slate-900 font-bold">{presentCount}</span> / {totalClasses} classes</div>
+                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${pct >= 75 ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                        className={`h-full rounded-full ${pct >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         style={{ width: `${pct}%` }}
                       ></div>
                     </div>
@@ -376,35 +367,35 @@ export default function StudentDashboard() {
 
       {/* Attendance History Table */}
       {attendanceRecords.length > 0 && (
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800">
-          <h2 className="text-xl font-bold text-white tracking-tight mb-1">Your Attendance Log History</h2>
-          <p className="text-xs text-slate-400 mb-6">Complete record of your marked class attendances</p>
+        <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight mb-0.5">Your Attendance Log History</h2>
+          <p className="text-xs text-slate-500 mb-4">Complete record of your marked class attendances</p>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-left text-xs">
-              <thead className="text-slate-400 bg-slate-900/60 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <thead className="text-slate-600 bg-slate-50 uppercase text-[10px] tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Subject</th>
-                  <th className="py-3 px-4">Section</th>
-                  <th className="py-3 px-4">Date & Time</th>
-                  <th className="py-3 px-4">Attendance Status</th>
+                  <th className="py-2.5 px-3.5 font-bold">Subject</th>
+                  <th className="py-2.5 px-3.5 font-bold">Section</th>
+                  <th className="py-2.5 px-3.5 font-bold">Date & Time</th>
+                  <th className="py-2.5 px-3.5 font-bold">Attendance Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-200 text-slate-700 bg-white">
                 {attendanceRecords.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-white">
+                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-2.5 px-3.5 font-bold text-slate-900">
                       {log.subjects?.name} ({log.subjects?.subject_code})
                     </td>
-                    <td className="py-3 px-4 text-slate-400">{log.subjects?.section}</td>
-                    <td className="py-3 px-4 font-mono text-slate-400">
+                    <td className="py-2.5 px-3.5 text-slate-600">{log.subjects?.section}</td>
+                    <td className="py-2.5 px-3.5 font-mono text-slate-500">
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                    <td className="py-2.5 px-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
                         log.status === 'present'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}>
                         <CheckCircle2 className="w-3 h-3" />
                         {log.status}
@@ -420,11 +411,11 @@ export default function StudentDashboard() {
 
       {/* Biometrics Setup Modal */}
       {bioModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative bg-white">
             <button
               onClick={() => setBioModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all cursor-pointer"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -432,16 +423,16 @@ export default function StudentDashboard() {
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
                 bioModal === 'face'
-                  ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
-                  : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                  ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                  : 'bg-rose-50 text-rose-600 border-rose-200'
               }`}>
                 {bioModal === 'face' ? <Camera className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">
+                <h3 className="font-bold text-lg text-slate-900">
                   {bioModal === 'face' ? 'Register Face Biometrics' : 'Register Voice Sample'}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   {bioModal === 'face' ? 'Take a clear portrait photo' : 'Record a 3-5 second speech sample'}
                 </p>
               </div>
@@ -449,10 +440,10 @@ export default function StudentDashboard() {
 
             {bioLoading ? (
               <div className="py-12 flex flex-col items-center justify-center text-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
                 <div>
-                  <h4 className="font-bold text-slate-200">Extracting 128-d Embedding...</h4>
-                  <p className="text-xs text-slate-400 mt-1">Saving profile to Supabase database</p>
+                  <h4 className="font-bold text-slate-800">Extracting 128-d Embedding...</h4>
+                  <p className="text-xs text-slate-500 mt-1">Saving profile to Supabase database</p>
                 </div>
               </div>
             ) : bioModal === 'face' ? (
