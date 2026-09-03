@@ -81,13 +81,13 @@ export default function AudioRecorder({ onRecordingComplete, label = "Send Audio
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center gap-3 w-full shadow-inner">
+      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-3 w-full shadow-xs">
         <div className="relative flex items-center justify-center">
           <div
             className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
               isRecording
                 ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/50'
-                : 'bg-slate-800 text-slate-400'
+                : 'bg-indigo-50 border border-indigo-200 text-indigo-600'
             }`}
           >
             <Mic className="w-8 h-8" />
@@ -95,7 +95,7 @@ export default function AudioRecorder({ onRecordingComplete, label = "Send Audio
         </div>
 
         <div className="text-center">
-          <div className="text-sm font-semibold text-slate-200">
+          <div className="text-sm font-bold text-slate-900">
             {isRecording ? 'Listening...' : audioBlob ? 'Recording Ready' : 'Ready to Record'}
           </div>
           <div className="text-xs font-mono text-slate-500 mt-0.5">
