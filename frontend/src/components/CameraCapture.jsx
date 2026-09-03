@@ -39,8 +39,10 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
         stream.getTracks().forEach(t => t.stop())
       }
 
-      if (!isGetUserMediaSupported) {
-        throw new Error("Browser camera API is not accessible in this environment. Please click 'Choose / Snap Photo' or use HTTPS.")
+      if (!isGetUserMediaSupported || (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+        // Automatically open the native mobile phone camera on Android / iOS
+        mobileInputRef.current?.click()
+        return
       }
 
       const devId = deviceIdToUse || selectedDeviceId
@@ -56,9 +58,10 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
       setIsCameraActive(true)
       await getCameraDevices()
     } catch (err) {
-      console.warn("Camera start failed:", err)
+      console.warn("Direct webcam stream unavailable, switching to native mobile camera:", err)
       setIsCameraActive(false)
-      setCameraError(err.message || "Camera permission denied or camera not found.")
+      // Automatically fallback to mobile device camera app
+      mobileInputRef.current?.click()
     }
   }
 
