@@ -224,6 +224,17 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   }
 
   useEffect(() => {
+    if (isOpen && subject) {
+      setSessionActive(false)
+      setSessionCompleted(false)
+      setPresentMap({})
+      setTimeLeft(30 * 60)
+      setLastScannedTime(null)
+      setStreamError(null)
+    }
+  }, [isOpen, subject?.id])
+
+  useEffect(() => {
     getCameraDevices()
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
