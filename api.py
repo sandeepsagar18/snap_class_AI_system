@@ -743,6 +743,34 @@ async def register_student_for_lecture(
     import time
     session = ACTIVE_SESSIONS.get(session_id)
     if not session:
+        # Attempt auto-initialization from DB
+        try:
+            sub_res = supabase.table("subjects").select("*, teachers(name)").eq("id", session_id).execute()
+            if sub_res.data and len(sub_res.data) > 0:
+                sub = sub_res.data[0]
+                teacher_name = sub.get("teachers", {}).get("name") if sub.get("teachers") else "Faculty"
+                students = get_subject_students(session_id)
+                session = {
+                    "session_id": session_id,
+                    "id": session_id,
+                    "teacher_name": teacher_name,
+                    "faculty_name": "Department of Computer Science",
+                    "subject_name": sub.get("name"),
+                    "subject_code": sub.get("subject_code"),
+                    "course": "B.Tech",
+                    "branch": "CSE",
+                    "class_name": "Class Section",
+                    "section": sub.get("section"),
+                    "status": "in_progress",
+                    "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "students": [_enrich_student_dict(s) for s in students],
+                    "present_map": {}
+                }
+                ACTIVE_SESSIONS[session_id] = session
+        except Exception as e:
+            print("Auto-session init error:", e)
+
+    if not session:
         raise HTTPException(status_code=404, detail="Lecture session not found or has expired")
 
     # 1. Process face embedding & photo

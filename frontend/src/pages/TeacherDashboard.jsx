@@ -4,6 +4,7 @@ import {
   getTeacherSubjects,
   getTeacherLogs,
   getSubjectStudents,
+  createLectureSession,
   predictFaceAttendance,
   predictVoiceAttendance
 } from '../lib/api'
@@ -107,25 +108,56 @@ export default function TeacherDashboard() {
 
   const openLiveSession = async (subject) => {
     setActiveSubject(subject)
-    const sessionObj = {
-      session_id: subject.id,
-      id: subject.id,
-      subject_name: subject.name,
-      subject_code: subject.subject_code,
-      section: subject.section,
-      teacher_name: user?.name || 'Prof. Sharma',
-      faculty_name: user?.department || 'Department of Computer Science',
-      class_name: 'Class Section',
-      branch: user?.department || 'General'
-    }
-    setActiveLectureSession(sessionObj)
-
+    
+    let students = []
     try {
-      const students = await getSubjectStudents(subject.id)
+      students = await getSubjectStudents(subject.id)
       setEnrolledStudents(students || [])
     } catch (err) {
       console.error('Error fetching students:', err)
       setEnrolledStudents([])
+    }
+
+    try {
+      // 1. Create a verified active backend lecture session with unique session_id
+      const created = await createLectureSession({
+        teacher_name: user?.name || 'Prof. Sharma',
+        faculty_name: user?.department || 'Department of Computer Science',
+        subject_name: subject.name,
+        subject_code: subject.subject_code,
+        course: 'B.Tech',
+        branch: user?.department || 'CSE',
+        class_name: 'Class Section',
+        section: subject.section,
+        students: students || []
+      })
+
+      const sessionObj = {
+        ...created,
+        id: subject.id,
+        session_id: created.session_id,
+        subject_name: subject.name,
+        subject_code: subject.subject_code,
+        section: subject.section,
+        teacher_name: user?.name || 'Prof. Sharma',
+        faculty_name: user?.department || 'Department of Computer Science',
+      }
+      setActiveLectureSession(sessionObj)
+    } catch (e) {
+      console.error('Failed to create session in backend:', e)
+      // Fallback to subject ID
+      const fallbackObj = {
+        session_id: subject.id,
+        id: subject.id,
+        subject_name: subject.name,
+        subject_code: subject.subject_code,
+        section: subject.section,
+        teacher_name: user?.name || 'Prof. Sharma',
+        faculty_name: user?.department || 'Department of Computer Science',
+        class_name: 'Class Section',
+        branch: user?.department || 'General'
+      }
+      setActiveLectureSession(fallbackObj)
     }
 
     // Directly show the Projector QR modal for students to scan first!
