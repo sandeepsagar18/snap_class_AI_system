@@ -269,6 +269,17 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-center">
+            {sessionActive && (
+              <button
+                onClick={endSession}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-rose-600/25 animate-pulse"
+                title="Finish class immediately and save attendance"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>End Class Session</span>
+              </button>
+            )}
+
             {onOpenQR && (
               <button
                 onClick={onOpenQR}
@@ -566,6 +577,16 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
           </div>
 
           <div className="flex items-center gap-2">
+            {sessionActive && (
+              <button
+                onClick={endSession}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/25 cursor-pointer"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                End & Finalize Class
+              </button>
+            )}
+
             {sessionCompleted && (
               <button
                 onClick={handleDownloadExcel}
@@ -580,7 +601,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
               onClick={() => { if (sessionActive) endSession(); onClose(); }}
               className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition-all cursor-pointer"
             >
-              Close Window
+              {sessionActive ? 'Cancel / Close' : 'Close Window'}
             </button>
           </div>
         </div>
