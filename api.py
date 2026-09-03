@@ -93,6 +93,7 @@ def health_check():
 @app.get("/api/network-ip")
 def get_network_ip():
     import socket
+    import re
     ip_list = []
     try:
         hostname = socket.gethostname()
@@ -101,20 +102,44 @@ def get_network_ip():
                 ip_list.append(ip)
     except Exception:
         pass
+    
+    # Sort so actual Wi-Fi subnet (192.168.29.x or 192.168.x.x) is prioritized over virtual adapters
+    def ip_priority(ip):
+        if ip.startswith("192.168.29."):
+            return 0
+        if ip.startswith("192.168.") and not ip.startswith("192.168.137."):
+            return 1
+        if ip.startswith("10.") or ip.startswith("172."):
+            return 2
+        return 3
+
+    ip_list.sort(key=ip_priority)
     primary_ip = ip_list[0] if ip_list else "127.0.0.1"
     
-    # Check for active public tunnel URL
+    # Dynamically detect active public tunnel URL from log or file
     public_tunnel = None
-    tunnel_file = os.path.join(os.path.dirname(__file__), ".tunnel_url")
-    if os.path.exists(tunnel_file):
+    log_file = os.path.join(os.path.dirname(__file__), "tunnel_stderr.log")
+    if os.path.exists(log_file):
         try:
-            with open(tunnel_file, "r") as f:
-                public_tunnel = f.read().strip()
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+                matches = re.findall(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", content)
+                if matches:
+                    public_tunnel = matches[-1]
         except Exception:
             pass
 
     if not public_tunnel:
-        public_tunnel = "https://bb6594e77292d4.lhr.life"
+        tunnel_file = os.path.join(os.path.dirname(__file__), ".tunnel_url")
+        if os.path.exists(tunnel_file):
+            try:
+                with open(tunnel_file, "r") as f:
+                    public_tunnel = f.read().strip()
+            except Exception:
+                pass
+
+    if not public_tunnel:
+        public_tunnel = f"http://{primary_ip}:5173"
 
     return {
         "success": True,
@@ -670,6 +695,34 @@ def get_active_sessions():
 @app.get("/api/lecture-sessions/{session_id}")
 def get_lecture_session(session_id: str):
     session = ACTIVE_SESSIONS.get(session_id)
+    if not session:
+        # Check if session_id corresponds to a valid subject in PostgreSQL
+        try:
+            sub_res = supabase.table("subjects").select("*, teachers(name)").eq("id", session_id).execute()
+            if sub_res.data and len(sub_res.data) > 0:
+                sub = sub_res.data[0]
+                teacher_name = sub.get("teachers", {}).get("name") if sub.get("teachers") else "Faculty"
+                students = get_subject_students(session_id)
+                session = {
+                    "session_id": session_id,
+                    "id": session_id,
+                    "teacher_name": teacher_name,
+                    "faculty_name": "Department of Computer Science",
+                    "subject_name": sub.get("name"),
+                    "subject_code": sub.get("subject_code"),
+                    "course": "B.Tech",
+                    "branch": "CSE",
+                    "class_name": "Class Section",
+                    "section": sub.get("section"),
+                    "status": "in_progress",
+                    "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "students": [_enrich_student_dict(s) for s in students],
+                    "present_map": {}
+                }
+                ACTIVE_SESSIONS[session_id] = session
+        except Exception as e:
+            print("Auto-session init error:", e)
+
     if not session:
         raise HTTPException(status_code=404, detail="Lecture session not found")
     return {"success": True, "session": session}
