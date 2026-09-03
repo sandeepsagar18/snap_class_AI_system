@@ -13,7 +13,9 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
   const [selectedDeviceId, setSelectedDeviceId] = useState('')
 
   const isGetUserMediaSupported = Boolean(
-    navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function'
+    typeof navigator !== 'undefined' &&
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === 'function'
   )
 
   const getCameraDevices = async () => {
@@ -31,25 +33,21 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
   }
 
   const startCamera = async (deviceIdToUse) => {
-    if (!isGetUserMediaSupported) {
-      // In non-https mobile environments, directly trigger native selfie camera
-      if (mobileInputRef.current) {
-        mobileInputRef.current.click()
-      }
-      return
-    }
-
     try {
       setCameraError(null)
       if (stream) {
         stream.getTracks().forEach(t => t.stop())
       }
 
+      if (!isGetUserMediaSupported) {
+        throw new Error("Browser camera API is not accessible in this environment. Please click 'Choose / Snap Photo' or use HTTPS.")
+      }
+
       const devId = deviceIdToUse || selectedDeviceId
       const constraints = {
         video: devId
-          ? { deviceId: { exact: devId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-          : { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+          ? { deviceId: { exact: devId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: false
       }
 
@@ -58,13 +56,9 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
       setIsCameraActive(true)
       await getCameraDevices()
     } catch (err) {
-      console.warn("Browser getUserMedia failed, triggering mobile native camera:", err)
-      // Automatically trigger native mobile selfie camera if getUserMedia is blocked by browser policy
-      if (mobileInputRef.current) {
-        mobileInputRef.current.click()
-      } else {
-        setCameraError("Browser camera access was restricted. Please use the 'Take Selfie Photo' button below.")
-      }
+      console.warn("Camera start failed:", err)
+      setIsCameraActive(false)
+      setCameraError(err.message || "Camera permission denied or camera not found.")
     }
   }
 
@@ -132,16 +126,12 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
 
   const retake = () => {
     setCapturedImage(null)
-    if (isGetUserMediaSupported) {
-      startCamera()
-    } else if (mobileInputRef.current) {
-      mobileInputRef.current.click()
-    }
+    startCamera()
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      {/* Hidden Mobile Native Front Camera Input */}
+    <div className="flex flex-col items-center gap-3 w-full">
+      {/* Native Mobile Camera / File Input (Fallback) */}
       <input
         ref={mobileInputRef}
         type="file"
@@ -152,24 +142,25 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
       />
 
       {devices.length > 1 && (
-        <div className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
-          <Settings2 className="w-4 h-4 text-indigo-400 shrink-0" />
-          <span className="font-semibold text-slate-400 shrink-0">Source:</span>
+        <div className="w-full flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
+          <Settings2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          <span className="font-bold text-slate-500 shrink-0">Camera:</span>
           <select
             value={selectedDeviceId}
             onChange={handleDeviceChange}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 truncate"
+            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 truncate font-medium"
           >
             {devices.map((d, index) => (
               <option key={d.deviceId || index} value={d.deviceId}>
-                {d.label || `Camera ${index + 1} (Classroom / USB / External)`}
+                {d.label || `Camera ${index + 1}`}
               </option>
             ))}
           </select>
         </div>
       )}
 
-      <div className="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group shadow-inner">
+      {/* Video Viewport Container */}
+      <div className="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center group shadow-sm">
         {capturedImage ? (
           <img
             src={capturedImage}
@@ -182,90 +173,93 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transform scale-x-[-1]"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-slate-500">
-            <Camera className="w-12 h-12 mb-2 stroke-1 text-indigo-400" />
-            <p className="text-sm font-medium text-slate-300">Face Photo Required</p>
-            <p className="text-xs text-slate-500 mt-1">Tap below to open your phone selfie camera or upload a photo</p>
+          <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400">
+            <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mb-2">
+              <Camera className="w-6 h-6 text-indigo-400" />
+            </div>
+            <p className="text-xs font-bold text-slate-200">Live Camera Stream</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Click "Open Live Camera" below to view your webcam</p>
           </div>
         )}
 
         <canvas ref={canvasRef} className="hidden" />
 
         {isCameraActive && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-semibold backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            LIVE
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold shadow-md">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            LIVE WEBCAM
           </div>
         )}
 
         {capturedImage && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-semibold backdrop-blur-md">
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-md">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            PHOTO READY
+            PHOTO SAVED
           </div>
         )}
       </div>
 
       {cameraError && (
-        <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 w-full">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{cameraError}</span>
+        <div className="flex items-start gap-2 p-2.5 text-xs rounded-xl bg-amber-50 border border-amber-200 text-amber-800 w-full font-medium">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span>{cameraError}</span>
+            <button
+              type="button"
+              onClick={() => mobileInputRef.current?.click()}
+              className="ml-2 font-bold underline text-indigo-600 cursor-pointer"
+            >
+              Upload / Snap Photo
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-center gap-3 w-full">
+      {/* Control Buttons */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
         {!capturedImage ? (
           <>
-            {/* Primary Native Selfie Camera Trigger (Works 100% on all mobile devices & LAN) */}
-            <button
-              type="button"
-              onClick={() => {
-                if (mobileInputRef.current) {
-                  mobileInputRef.current.click()
-                } else {
-                  startCamera()
-                }
-              }}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/30 cursor-pointer"
-            >
-              <Smartphone className="w-4 h-4" />
-              <span>Take Live Selfie Photo (Camera)</span>
-            </button>
-
-            {isCameraActive && (
+            {!isCameraActive ? (
+              <button
+                type="button"
+                onClick={() => startCamera()}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
+              >
+                <Video className="w-4 h-4" />
+                <span>Open Live Camera</span>
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={capturePhoto}
-                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Snap Webcam Frame</span>
+                <Camera className="w-4 h-4" />
+                <span>Snap Live Photo</span>
               </button>
             )}
 
-            {/* Gallery Upload Option */}
-            <label className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs transition-all border border-slate-800 cursor-pointer">
+            {/* File Upload / Mobile Native Photo */}
+            <button
+              type="button"
+              onClick={() => mobileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all border border-slate-300 cursor-pointer"
+            >
               <Upload className="w-4 h-4" />
-              <span>Choose Photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
+              <span>Choose Photo / File</span>
+            </button>
           </>
         ) : (
           <button
             type="button"
             onClick={retake}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-all border border-slate-700 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all border border-slate-300 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4" />
-            Retake / Change Photo
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retake Photo</span>
           </button>
         )}
       </div>
