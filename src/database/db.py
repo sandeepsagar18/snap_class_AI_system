@@ -164,9 +164,28 @@ def create_subject(subject_code, name, section, teacher_id):
 
 def get_subject_students(subject_id):
     try:
+        # 1. Explicit enrollments
         response = supabase.table('subject_students').select("student_id, students(*)").eq('subject_id', subject_id).execute()
-        return [item['students'] for item in response.data if item.get('students')]
-    except Exception:
+        explicit = [item['students'] for item in (response.data or []) if item.get('students')]
+        
+        # 2. Check subject details (section, class, branch)
+        sub_res = supabase.table('subjects').select("*").eq('id', subject_id).execute()
+        auto_students = []
+        if sub_res.data and len(sub_res.data) > 0:
+            sub = sub_res.data[0]
+            sec = sub.get("section")
+            if sec:
+                all_st = get_all_students() or []
+                for st in all_st:
+                    st_sec = (st.get("section") or "").strip().lower()
+                    sec_clean = sec.strip().lower()
+                    if st_sec and (st_sec == sec_clean or st_sec == f"section {sec_clean}" or f"section {st_sec}" == sec_clean):
+                        if not any(ex.get("id") == st.get("id") for ex in explicit):
+                            auto_students.append(st)
+        
+        return explicit + auto_students
+    except Exception as e:
+        print("get_subject_students error:", e)
         return []
 
 def enroll_student_to_subject(student_id, subject_id):

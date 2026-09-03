@@ -162,7 +162,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   const handleDownloadExcel = () => {
     const sessionFormatted = new Date().toLocaleString()
 
-    const studentsWithStatus = students.map(s => {
+    const studentsWithStatus = (students || []).map(s => {
       const markedTime = presentMap[s.id]
       const isPresent = !!markedTime
       return {
@@ -174,11 +174,11 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     })
 
     exportAttendanceToExcel({
-      subjectName: subject.name || subject.subject_name || 'Class Subject',
-      subjectCode: subject.subject_code || 'CODE',
-      section: subject.section || 'A',
-      teacherName: subject.teacher_name || 'Prof. Sharma',
-      facultyName: subject.faculty_name || 'Department of Computer Science',
+      subjectName: subject?.name || subject?.subject_name || 'Class Subject',
+      subjectCode: subject?.subject_code || 'CODE',
+      section: subject?.section || 'A',
+      teacherName: subject?.teacher_name || 'Prof. Sharma',
+      facultyName: subject?.faculty_name || 'Department of Computer Science',
       sessionDate: sessionFormatted,
       sessionType: '30-Minute Live Video AI Session'
     }, studentsWithStatus)
@@ -194,9 +194,9 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
 
     setSaving(true)
     try {
-      const logs = students.map(s => ({
+      const logs = (students || []).map(s => ({
         student_id: s.id,
-        subject_id: subject.id,
+        subject_id: subject.id || subject.session_id,
         status: presentMap[s.id] ? 'present' : 'absent',
         timestamp: new Date().toISOString()
       }))
@@ -232,7 +232,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   }
 
   const presentCount = Object.keys(presentMap).length
-  const totalCount = students.length
+  const totalCount = (students || []).length
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -246,10 +246,10 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-lg text-slate-900">Classroom Live Video Attendance (30 Mins)</h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
-                  {subject.name} ({subject.section})
+                  {subject.name || subject.subject_name} ({subject.section})
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">Stream classroom camera — automatically exports Excel report upon class completion</p>
+              <p className="text-xs text-slate-500 font-medium">Stream classroom camera — download sheet appears immediately when class ends</p>
             </div>
           </div>
 
@@ -264,14 +264,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
                 <span className="hidden sm:inline">Project QR</span>
               </button>
             )}
-            <button
-              onClick={handleDownloadExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-bold transition-all cursor-pointer"
-              title="Download Excel Sheet (.xlsx)"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Export Excel</span>
-            </button>
+            
             <button
               onClick={() => { if (sessionActive) endSession(); onClose(); }}
               className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
@@ -368,7 +361,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
 
               <canvas ref={canvasRef} className="hidden" />
 
-              {!sessionActive && (
+              {!sessionActive && !sessionCompleted && (
                 <div className="text-center p-6 space-y-3">
                   <div className="w-14 h-14 rounded-full bg-slate-800 text-indigo-400 flex items-center justify-center mx-auto">
                     <Video className="w-7 h-7" />
@@ -379,13 +372,48 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
                       Start the 30-minute automated video session. When finished, an Excel spreadsheet will be created automatically.
                     </p>
                   </div>
-                  <button
-                    onClick={startSession}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 fill-white" />
-                    Start 30-Min Live Session
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                    <button
+                      onClick={startSession}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
+                    >
+                      <Play className="w-4 h-4 fill-white" />
+                      Start 30-Min Live Session
+                    </button>
+                    {onOpenQR && (
+                      <button
+                        onClick={onOpenQR}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+                      >
+                        <QrCode className="w-4 h-4 text-indigo-400" />
+                        Project In-Class QR
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Class Finished Celebration State */}
+              {sessionCompleted && !sessionActive && (
+                <div className="text-center p-6 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+                    <CheckCircle className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-lg">Class Lecture Finished!</h4>
+                    <p className="text-xs text-emerald-300 max-w-sm mx-auto mt-1 font-medium">
+                      Attendance recorded: <b>{presentCount}</b> Present / {totalCount} Enrolled students.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      onClick={handleDownloadExcel}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-xl shadow-emerald-600/30 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Attendance Excel Sheet (.xlsx)
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -429,10 +457,10 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
               <div className="flex gap-3">
                 <button
                   onClick={endSession}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 cursor-pointer"
                 >
                   <Square className="w-4 h-4 fill-white" />
-                  End Class & Export Excel Attendance
+                  Finish Class & Save Attendance
                 </button>
               </div>
             )}
@@ -450,9 +478,9 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {students.length === 0 ? (
+              {totalCount === 0 ? (
                 <div className="text-center py-10 text-slate-400 text-xs font-medium">
-                  No students enrolled in this subject yet.
+                  No students in this roster yet. Click "Project QR" above to allow students to scan and register.
                 </div>
               ) : (
                 students.map((student) => {
@@ -503,6 +531,10 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
               <span className="flex items-center gap-2 text-indigo-600 font-bold">
                 <Loader2 className="w-4 h-4 animate-spin" /> Saving session attendance & generating Excel report...
               </span>
+            ) : sessionCompleted ? (
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4" /> Attendance saved in database! Download your Excel report below:
+              </span>
             ) : (
               <span className="text-slate-500">
                 📊 Attendance logs are stored in PostgreSQL & exported as <b>.xlsx</b> files.
@@ -510,13 +542,15 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
             )}
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={handleDownloadExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download Excel Report
-            </button>
+            {sessionCompleted && (
+              <button
+                onClick={handleDownloadExcel}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/25 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download Excel Sheet
+              </button>
+            )}
             <button
               onClick={() => { if (sessionActive) endSession(); onClose(); }}
               className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition-all cursor-pointer"

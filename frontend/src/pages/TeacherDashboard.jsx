@@ -104,13 +104,26 @@ export default function TeacherDashboard() {
 
   const openLiveSession = async (subject) => {
     setActiveSubject(subject)
+    const sessionObj = {
+      session_id: subject.id,
+      id: subject.id,
+      subject_name: subject.name,
+      subject_code: subject.subject_code,
+      section: subject.section,
+      teacher_name: user?.name || 'Prof. Sharma',
+      faculty_name: user?.department || 'Department of Computer Science',
+      class_name: 'Class Section',
+      branch: user?.department || 'General'
+    }
+    setActiveLectureSession(sessionObj)
+
     try {
       const students = await getSubjectStudents(subject.id)
       setEnrolledStudents(students || [])
-      setLiveSubject(subject)
+      setLiveSubject(sessionObj)
     } catch (err) {
       console.error('Error fetching students:', err)
-      alert('Failed to load students for live session')
+      setLiveSubject(sessionObj)
     }
   }
 
