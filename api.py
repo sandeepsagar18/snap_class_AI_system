@@ -600,12 +600,19 @@ async def extract_face_embedding(file: UploadFile = File(...), student_id: Optio
     return {"success": True, "embedding": embedding_list, "faces_found": len(embeddings)}
 
 @app.post("/api/predict-face-attendance")
-async def predict_face_attendance_endpoint(file: UploadFile = File(...)):
+async def predict_face_attendance_endpoint(file: UploadFile = File(...), candidate_ids: Optional[str] = Form(None)):
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     image_np = np.array(image)
     
-    detected_students, all_students, total_faces = predict_attendance(image_np)
+    allowed = None
+    if candidate_ids:
+        try:
+            allowed = json.loads(candidate_ids)
+        except Exception:
+            pass
+
+    detected_students, all_students, total_faces = predict_attendance(image_np, allowed_candidate_ids=allowed)
     present_ids = [student_id for student_id, is_present in detected_students.items() if is_present]
     
     return {

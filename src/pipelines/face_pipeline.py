@@ -6,10 +6,9 @@ from src.database.db import get_all_students
 # Global in-memory cache for ultra-fast vectorized embeddings lookup
 _CACHE_MODEL = None
 
-def get_face_embeddings(image_np, fast_mode=False):
+def get_face_embeddings(image_np, fast_mode=True):
     """
     Direct high-accuracy face detector and encoder.
-    Uses original frame resolution or clean 2-step detector for 100% detection reliability.
     """
     if fast_mode:
         h, w = image_np.shape[:2]
@@ -84,9 +83,11 @@ def train_classifier():
     model_data = get_trained_model(force_refresh=True)
     return bool(model_data)
 
-def predict_attendance(class_image_np):
+def predict_attendance(class_image_np, allowed_candidate_ids=None):
     """
-    High-speed robust face recognition with realistic lighting tolerance.
+    High-speed robust face recognition.
+    If allowed_candidate_ids is provided (e.g. roster for this class), only matches against them.
+    Also falls back to global candidates if needed.
     """
     encodings = get_face_embeddings(class_image_np, fast_mode=True)
     detected_student = {}
@@ -98,22 +99,34 @@ def predict_attendance(class_image_np):
     if not model_data or len(model_data.get('X', [])) == 0:
         return detected_student, [], len(encodings)
 
-    X_train = model_data['X'] # Matrix: (N, 128)
-    y_train = model_data['y'] # List of N student IDs
-    all_students = list(set(y_train))
+    X_train_all = model_data['X'] # Matrix: (N, 128)
+    y_train_all = model_data['y'] # List of N student IDs
 
-    # Standard Euclidean distance tolerance (0.62 allows normal classroom lighting variations)
+    # If class-specific candidates provided, filter to prioritize this class
+    if allowed_candidate_ids and len(allowed_candidate_ids) > 0:
+        allowed_set = {str(cid) for cid in allowed_candidate_ids}
+        filtered_indices = [idx for idx, sid in enumerate(y_train_all) if str(sid) in allowed_set]
+        if filtered_indices:
+            X_train = X_train_all[filtered_indices]
+            y_train = [y_train_all[idx] for idx in filtered_indices]
+        else:
+            X_train = X_train_all
+            y_train = y_train_all
+    else:
+        X_train = X_train_all
+        y_train = y_train_all
+
+    all_students = list(set(y_train))
     resemblance_threshold = 0.62
 
     for encoding in encodings:
         enc_arr = np.array(encoding, dtype=np.float32)
         distances = np.linalg.norm(X_train - enc_arr, axis=1)
 
-        min_idx = np.argmin(distances)
-        min_dist = distances[min_idx]
-
-        if min_dist <= resemblance_threshold:
-            matched_id = y_train[min_idx]
-            detected_student[matched_id] = True
+        # Mark all candidates within the resemblance threshold as present
+        for idx, dist in enumerate(distances):
+            if dist <= resemblance_threshold:
+                matched_id = y_train[idx]
+                detected_student[matched_id] = True
 
     return detected_student, all_students, len(encodings)

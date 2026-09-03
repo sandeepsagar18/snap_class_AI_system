@@ -208,9 +208,12 @@ export async function extractFaceEmbedding(imageBlobOrFile, studentId = null) {
   return data
 }
 
-export async function predictFaceAttendance(imageBlobOrFile) {
+export async function predictFaceAttendance(imageBlobOrFile, candidateIds = null) {
   const formData = new FormData()
   formData.append('file', imageBlobOrFile, 'class.jpg')
+  if (candidateIds && candidateIds.length > 0) {
+    formData.append('candidate_ids', JSON.stringify(candidateIds))
+  }
 
   const response = await fetch(`${API_BASE_URL}/predict-face-attendance`, {
     method: 'POST',

@@ -106,7 +106,8 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       }
 
       if (imageBlob) {
-        const res = await predictFaceAttendance(imageBlob)
+        const studentIds = (students || []).map(s => s.id)
+        const res = await predictFaceAttendance(imageBlob, studentIds)
         const detectedIds = res?.present_student_ids || []
 
         if (detectedIds && detectedIds.length > 0) {
@@ -115,8 +116,8 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
             const next = { ...prev }
             detectedIds.forEach(id => {
               next[id] = next[id] || nowStr
-              // Also map against stringified id
-              const matchingStudent = (students || []).find(s => String(s.id) === String(id) || String(s.student_id) === String(id))
+              // Also map against matching student object in current class
+              const matchingStudent = (students || []).find(s => String(s.id) === String(id) || String(s.student_id) === String(id) || (s.roll_no && String(s.roll_no) === String(id)))
               if (matchingStudent && matchingStudent.id) {
                 next[matchingStudent.id] = next[matchingStudent.id] || nowStr
               }
