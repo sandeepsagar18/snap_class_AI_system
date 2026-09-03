@@ -94,20 +94,22 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
         const video = videoRef.current
         const canvas = canvasRef.current
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth || 1280
-          canvas.height = video.videoHeight || 720
+          // Optimized frame dimension for ultra-fast AI inference
+          canvas.width = 640
+          canvas.height = 480
           const ctx = canvas.getContext('2d')
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          ctx.drawImage(video, 0, 0, 640, 480)
 
           imageBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.9)
+            canvas.toBlob(resolve, 'image/jpeg', 0.8)
           })
         }
       }
 
       if (imageBlob && students && students.length > 0) {
         const studentIds = students.map(s => s.id)
-        const detectedIds = await predictFaceAttendance(imageBlob, studentIds, subject?.id || subject?.session_id)
+        const res = await predictFaceAttendance(imageBlob, studentIds, subject?.id || subject?.session_id)
+        const detectedIds = res?.present_student_ids || []
 
         if (detectedIds && detectedIds.length > 0) {
           const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -142,10 +144,15 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       startCamera()
     }
 
-    // Run frame scan every 4 seconds
+    // Trigger instant initial scan
+    setTimeout(() => {
+      scanFrame()
+    }, 500)
+
+    // Run rapid frame scan every 1.5 seconds for instant attendance!
     intervalRef.current = setInterval(() => {
       scanFrame()
-    }, 4000)
+    }, 1500)
 
     // Run countdown timer
     timerRef.current = setInterval(() => {
