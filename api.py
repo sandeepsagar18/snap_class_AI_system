@@ -426,8 +426,25 @@ def enroll_student(student_id: str, payload: Dict[str, Any] = Body(...)):
 
 @app.get("/api/student/{student_id}/subjects")
 def student_subjects_api(student_id: str):
+    # 1. Fetch explicitly enrolled subjects
     res = supabase.table("subject_students").select("subjects(*)").eq("student_id", student_id).execute()
-    return {"success": True, "subjects": res.data}
+    explicit_subjects = [item["subjects"] for item in (res.data or []) if item.get("subjects")]
+    
+    # 2. Also fetch subjects matching student's section/class/branch
+    student_records = get_student_by_identifier(student_id)
+    auto_subjects = []
+    if student_records and len(student_records) > 0:
+        st = student_records[0]
+        sec = st.get("section")
+        all_subs = supabase.table("subjects").select("*").execute().data or []
+        for s in all_subs:
+            # If section matches or already enrolled
+            if sec and s.get("section") and (s.get("section").strip().lower() == sec.strip().lower() or s.get("section").strip().lower() == f"section {sec.strip().lower()}"):
+                if not any(ex.get("id") == s.get("id") for ex in explicit_subjects):
+                    auto_subjects.append(s)
+
+    combined = [{"subjects": s} for s in (explicit_subjects + auto_subjects)]
+    return {"success": True, "subjects": combined}
 
 @app.get("/api/student/{student_id}/attendance")
 def student_attendance_api(student_id: str):

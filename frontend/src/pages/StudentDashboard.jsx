@@ -4,28 +4,23 @@ import {
   getStudentProfile,
   getStudentSubjects,
   getStudentAttendance,
-  enrollStudentInSubject,
   extractFaceEmbedding,
   extractVoiceEmbedding
 } from '../lib/api'
 import CameraCapture from '../components/CameraCapture'
 import AudioRecorder from '../components/AudioRecorder'
 import EditProfileModal from '../components/EditProfileModal'
-import { BookOpen, Camera, Mic, Plus, CheckCircle2, Hash, Loader2, Sparkles, X, User, Edit3 } from 'lucide-react'
+import { BookOpen, Camera, Mic, CheckCircle2, XCircle, Clock, Calendar, Hash, Loader2, Sparkles, X, User, Edit3, ChevronRight, Layers, Award } from 'lucide-react'
 
 export default function StudentDashboard() {
   const { user, setUser } = useAuth()
   const [enrolledSubjects, setEnrolledSubjects] = useState([])
   const [attendanceRecords, setAttendanceRecords] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('ALL') // 'ALL' | subject_id
 
   // Modals
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
-
-  // Join code flow
-  const [joinCodeInput, setJoinCodeInput] = useState('')
-  const [joining, setJoining] = useState(false)
-  const [joinMsg, setJoinMsg] = useState({ type: '', text: '' })
 
   // Biometric registration modal
   const [bioModal, setBioModal] = useState(null) // 'face' | 'voice' | null
@@ -53,31 +48,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchStudentData()
-
-    // Handle auto-join from URL parameter
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('join-code')
-    if (code) {
-      setJoinCodeInput(code)
-    }
   }, [user?.id])
-
-  const handleJoinSubject = async () => {
-    if (!joinCodeInput.trim()) return
-    setJoining(true)
-    setJoinMsg({ type: '', text: '' })
-
-    try {
-      await enrollStudentInSubject(user.id, joinCodeInput.trim())
-      setJoinMsg({ type: 'success', text: 'Successfully enrolled in class!' })
-      setJoinCodeInput('')
-      fetchStudentData()
-    } catch (err) {
-      setJoinMsg({ type: 'error', text: err.message || 'Failed to join class' })
-    } finally {
-      setJoining(false)
-    }
-  }
 
   const handleFaceUpload = async (blob) => {
     setBioLoading(true)
@@ -109,6 +80,16 @@ export default function StudentDashboard() {
 
   const hasFace = !!user?.face_embedding
   const hasVoice = !!user?.voice_embedding
+
+  // Filter attendance logs by selected subject tab
+  const filteredLogs = selectedSubjectFilter === 'ALL'
+    ? attendanceRecords
+    : attendanceRecords.filter(log => log.subject_id === selectedSubjectFilter)
+
+  // Overall attendance stats
+  const totalLogs = attendanceRecords.length
+  const totalPresent = attendanceRecords.filter(r => r.status === 'present').length
+  const overallPercentage = totalLogs > 0 ? Math.round((totalPresent / totalLogs) * 100) : 100
 
   return (
     <div className="space-y-6 pb-12">
@@ -262,77 +243,47 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Join Subject Card */}
-      <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
-        <h2 className="text-base font-bold text-slate-900 tracking-tight mb-0.5">Join a New Class</h2>
-        <p className="text-xs text-slate-500 mb-3">Enter the join code shared by your teacher</p>
-
-        {joinMsg.text && (
-          <div className={`mb-3 p-2.5 rounded-xl border text-xs font-medium ${
-            joinMsg.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : 'bg-rose-50 border-rose-200 text-rose-700'
-          }`}>
-            {joinMsg.text}
-          </div>
-        )}
-
-        <form onSubmit={(e) => { e.preventDefault(); handleJoinSubject(); }} className="flex flex-col sm:flex-row gap-2 max-w-xl">
-          <div className="relative flex-1">
-            <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Paste 36-character Subject Code"
-              value={joinCodeInput}
-              onChange={(e) => setJoinCodeInput(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={joining}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-sm shadow-indigo-500/20 cursor-pointer disabled:opacity-50 shrink-0"
-          >
-            {joining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            Join Class
-          </button>
-        </form>
-      </div>
-
-      {/* Enrolled Subjects List */}
+      {/* Enrolled Subjects with Individual Subject Attendance Cards */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Your Enrolled Classes</h2>
-            <p className="text-xs text-slate-500">Courses and attendance history</p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Enrolled Subjects & Attendance Summary</h2>
+            <p className="text-xs text-slate-500">Click any subject card to inspect individual lecture dates and times</p>
           </div>
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600">
-            {enrolledSubjects.length} Classes Enrolled
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700">
+              Overall: {overallPercentage}% Attendance ({totalPresent}/{totalLogs})
+            </span>
+          </div>
         </div>
 
         {enrolledSubjects.length === 0 ? (
-          <div className="glass-panel rounded-2xl p-10 text-center border border-slate-200 bg-white">
+          <div className="glass-panel rounded-2xl p-10 text-center border border-slate-200 bg-white shadow-xs">
             <BookOpen className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-            <h3 className="text-sm font-bold text-slate-800">You haven't joined any classes yet</h3>
-            <p className="text-xs text-slate-500 mt-1">Use the join code provided by your teacher above to enroll.</p>
+            <h3 className="text-sm font-bold text-slate-800">No active classes assigned yet</h3>
+            <p className="text-xs text-slate-500 mt-1">Your assigned class lectures and attendance logs will appear here automatically when conducted by your faculty.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {enrolledSubjects.map((sub) => {
               const myLogs = attendanceRecords.filter(r => r.subject_id === sub.id)
               const presentCount = myLogs.filter(r => r.status === 'present').length
               const totalClasses = myLogs.length
               const pct = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 100
+              const isSelected = selectedSubjectFilter === sub.id
 
               return (
                 <div
                   key={sub.id}
-                  className="glass-card rounded-2xl p-5 border border-slate-200 flex flex-col justify-between bg-white shadow-xs"
+                  onClick={() => setSelectedSubjectFilter(isSelected ? 'ALL' : sub.id)}
+                  className={`glass-card rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/20 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
+                  }`}
                 >
                   <div>
-                    <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
                       <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200">
                         {sub.subject_code}
                       </span>
@@ -346,14 +297,19 @@ export default function StudentDashboard() {
                     </div>
 
                     <h3 className="text-base font-bold text-slate-900 mb-0.5">{sub.name}</h3>
-                    <p className="text-xs text-slate-500">Section: <span className="text-slate-700 font-semibold">{sub.section}</span></p>
+                    <p className="text-xs text-slate-500">Section: <span className="text-slate-800 font-semibold">{sub.section}</span></p>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <div>Attended: <span className="text-slate-900 font-bold">{presentCount}</span> / {totalClasses} classes</div>
-                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="mt-5 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                      <div>Attended: <b className="text-slate-900">{presentCount}</b> / {totalClasses} classes</div>
+                      <div className="font-semibold text-[11px] text-indigo-600">
+                        {isSelected ? 'Viewing History ▾' : 'View Timestamps →'}
+                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${pct >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${pct >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         style={{ width: `${pct}%` }}
                       ></div>
                     </div>
@@ -365,49 +321,129 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      {/* Attendance History Table */}
-      {attendanceRecords.length > 0 && (
-        <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight mb-0.5">Your Attendance Log History</h2>
-          <p className="text-xs text-slate-500 mb-4">Complete record of your marked class attendances</p>
+      {/* Individual Subject Attendance Timeline & Timestamps */}
+      <div className="glass-panel rounded-2xl p-5 border border-slate-200 bg-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                Subject Attendance Logs with Exact Dates & Times
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Chronological log of every lecture class joined, marked status, date, and exact timestamp
+            </p>
+          </div>
 
+          {/* Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => setSelectedSubjectFilter('ALL')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                selectedSubjectFilter === 'ALL'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All Subjects ({attendanceRecords.length})
+            </button>
+            {enrolledSubjects.map((sub) => {
+              const count = attendanceRecords.filter(r => r.subject_id === sub.id).length
+              return (
+                <button
+                  key={sub.id}
+                  onClick={() => setSelectedSubjectFilter(sub.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedSubjectFilter === sub.id
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {sub.subject_code} ({count})
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {filteredLogs.length === 0 ? (
+          <div className="py-12 text-center text-slate-400">
+            <Clock className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <h4 className="text-sm font-bold text-slate-700">No attendance records logged yet</h4>
+            <p className="text-xs text-slate-400 mt-1">
+              When your teacher launches a biometric face/QR attendance session, your attendance timestamps will appear here in real-time.
+            </p>
+          </div>
+        ) : (
           <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-left text-xs">
               <thead className="text-slate-600 bg-slate-50 uppercase text-[10px] tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-2.5 px-3.5 font-bold">Subject</th>
-                  <th className="py-2.5 px-3.5 font-bold">Section</th>
-                  <th className="py-2.5 px-3.5 font-bold">Date & Time</th>
-                  <th className="py-2.5 px-3.5 font-bold">Attendance Status</th>
+                  <th className="py-3 px-4 font-bold">Subject & Code</th>
+                  <th className="py-3 px-4 font-bold">Section</th>
+                  <th className="py-3 px-4 font-bold">Class Lecture Date</th>
+                  <th className="py-3 px-4 font-bold">Exact Time Marked</th>
+                  <th className="py-3 px-4 font-bold">Attendance Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-700 bg-white">
-                {attendanceRecords.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-2.5 px-3.5 font-bold text-slate-900">
-                      {log.subjects?.name} ({log.subjects?.subject_code})
-                    </td>
-                    <td className="py-2.5 px-3.5 text-slate-600">{log.subjects?.section}</td>
-                    <td className="py-2.5 px-3.5 font-mono text-slate-500">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </td>
-                    <td className="py-2.5 px-3.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        log.status === 'present'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}>
-                        <CheckCircle2 className="w-3 h-3" />
-                        {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {filteredLogs.map((log) => {
+                  const logDate = new Date(log.timestamp)
+                  const isPresent = log.status === 'present'
+
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {log.subjects?.subject_code || 'CLASS'}
+                          </span>
+                          <span>{log.subjects?.name || 'Lecture Session'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 font-medium">
+                        {log.subjects?.section || user?.section || 'A'}
+                      </td>
+                      <td className="py-3 px-4 font-medium text-slate-800">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>{logDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{logDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          isPresent
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}>
+                          {isPresent ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              PRESENT (Verified)
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              ABSENT
+                            </>
+                          )}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Biometrics Setup Modal */}
       {bioModal && (
