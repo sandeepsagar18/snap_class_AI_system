@@ -354,21 +354,21 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
           
           {/* VIDEO CANVAS CONTAINER (7 COLS) */}
           <div className="lg:col-span-7 flex flex-col gap-3 min-h-0">
-            <div className="relative flex-1 bg-slate-950 rounded-2xl border border-slate-200 overflow-hidden flex items-center justify-center min-h-[300px] shadow-inner">
+            <div className="relative flex-1 bg-slate-950 rounded-2xl border border-slate-300 overflow-hidden flex items-center justify-center min-h-[380px] sm:min-h-[440px] shadow-inner">
               {cameraMode === 'usb' ? (
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-cover transform scale-x-[-1] ${!sessionActive ? 'hidden' : ''}`}
+                  className={`w-full h-full object-contain max-h-[460px] transform scale-x-[-1] ${!sessionActive ? 'hidden' : ''}`}
                 />
               ) : (
                 sessionActive && ipCameraUrl ? (
                   <img
                     src={ipCameraUrl}
                     alt="Classroom CCTV Stream"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain max-h-[460px]"
                     crossOrigin="anonymous"
                   />
                 ) : null

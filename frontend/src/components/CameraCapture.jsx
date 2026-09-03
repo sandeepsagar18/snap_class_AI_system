@@ -162,13 +162,13 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
         </div>
       )}
 
-      {/* Video Viewport Container */}
-      <div className="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center group shadow-sm">
+      {/* Video Viewport Container (Spacious Height for Full Face Visibility) */}
+      <div className="relative w-full min-h-[340px] sm:min-h-[380px] md:min-h-[420px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-300 flex items-center justify-center group shadow-md">
         {capturedImage ? (
           <img
             src={capturedImage}
             alt="Captured preview"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain max-h-[420px]"
           />
         ) : isCameraActive ? (
           <video
@@ -176,15 +176,15 @@ export default function CameraCapture({ onCapture, label = "Take Photo" }) {
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover transform scale-x-[-1]"
+            className="w-full h-full object-contain max-h-[420px] transform scale-x-[-1]"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400">
-            <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mb-2">
-              <Camera className="w-6 h-6 text-indigo-400" />
+          <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
+            <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-2 shadow-xs">
+              <Camera className="w-7 h-7 text-indigo-400" />
             </div>
-            <p className="text-xs font-bold text-slate-200">Live Camera Stream</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Click "Open Live Camera" below to view your webcam</p>
+            <p className="text-sm font-bold text-slate-200">Full Face Camera Viewfinder</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">Click "Open Live Camera" below to view your live camera</p>
           </div>
         )}
 
