@@ -461,7 +461,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
               {sessionActive && (
                 <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-white"></span>
-                  <span>LIVE CLASSROOM STREAM</span>
+                  <span>LIVE CAMERA SCANNING</span>
                 </div>
               )}
 
@@ -472,16 +472,31 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
                 </div>
               )}
 
+              {/* Instant recognition live notification badge */}
+              {sessionActive && presentCount > 0 && (
+                <div className="absolute top-12 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600/90 text-white text-xs font-bold shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-300">
+                  <CheckCircle className="w-3.5 h-3.5 text-white" />
+                  <span>{presentCount} Student{presentCount > 1 ? 's' : ''} Recognized & Marked Present!</span>
+                </div>
+              )}
+
               {sessionActive && (
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-800 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-slate-300 text-[11px]">
-                      {isScanningFrame ? 'AI Frame Analysis scanning students...' : `Last scan: ${lastScannedTime || 'Just now'}`}
-                    </span>
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-slate-800 text-xs shadow-lg">
+                  <div className="flex items-center gap-2.5">
+                    {isScanningFrame ? (
+                      <div className="flex items-center gap-2 text-indigo-400 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
+                        <span className="text-[11px]">AI Matching Faces with Database...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-slate-300 text-[11px]">AI Active • Last scan: {lastScannedTime || 'Just now'}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-[11px] text-emerald-400 font-black">
-                    {presentCount} Matched
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-[11px] text-emerald-300 font-black">
+                    <span>{presentCount} / {totalCount} Present</span>
                   </div>
                 </div>
               )}
