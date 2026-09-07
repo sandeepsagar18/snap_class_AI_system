@@ -5,8 +5,7 @@ import {
   getTeacherLogs,
   getSubjectStudents,
   createLectureSession,
-  predictFaceAttendance,
-  predictVoiceAttendance
+  predictFaceAttendance
 } from '../lib/api'
 import CreateSubjectModal from '../components/CreateSubjectModal'
 import ShareModal from '../components/ShareModal'
@@ -16,8 +15,7 @@ import LiveSessionModal from '../components/LiveSessionModal'
 import StartAttendanceConfigModal from '../components/StartAttendanceConfigModal'
 import LectureQRRegistrationModal from '../components/LectureQRRegistrationModal'
 import CameraCapture from '../components/CameraCapture'
-import AudioRecorder from '../components/AudioRecorder'
-import { Plus, BookOpen, Users, Camera, Mic, Share2, Calendar, CheckCircle2, RefreshCw, Loader2, Sparkles, X, Video, FileSpreadsheet, Download, Play, Sliders, QrCode, Square, Radio } from 'lucide-react'
+import { Plus, BookOpen, Users, Camera, Share2, Calendar, CheckCircle2, RefreshCw, Loader2, Sparkles, X, Video, FileSpreadsheet, Download, Play, Sliders, QrCode, Square, Radio } from 'lucide-react'
 import { exportSubjectLogsToExcel, exportClassFullHistoryToExcel, exportAttendanceToExcel } from '../lib/excelExport'
 
 export default function TeacherDashboard() {
@@ -176,18 +174,6 @@ export default function TeacherDashboard() {
     }
   }
 
-  const openVoiceAttendance = async (subject) => {
-    setActiveSubject(subject)
-    try {
-      const students = await getSubjectStudents(subject.id)
-      setEnrolledStudents(students || [])
-      setAttendanceMode('voice')
-    } catch (err) {
-      console.error('Error fetching students:', err)
-      alert('Failed to load subject students')
-    }
-  }
-
   const handleFaceCapture = async (blob) => {
     setProcessingAI(true)
     try {
@@ -205,28 +191,6 @@ export default function TeacherDashboard() {
     } catch (err) {
       console.error('Face prediction error:', err)
       alert('Error during face recognition: ' + err.message)
-    } finally {
-      setProcessingAI(false)
-    }
-  }
-
-  const handleVoiceRecord = async (audioBlob) => {
-    setProcessingAI(true)
-    try {
-      const candidatesDict = {}
-      enrolledStudents.forEach((st) => {
-        if (st.voice_embedding) {
-          candidatesDict[st.id] = st.voice_embedding
-        }
-      })
-
-      const res = await predictVoiceAttendance(audioBlob, candidatesDict)
-      setDetectedIds(res.present_student_ids || [])
-      setResultsOpen(true)
-      setAttendanceMode(null)
-    } catch (err) {
-      console.error('Voice prediction error:', err)
-      alert('Error during voice recognition: ' + err.message)
     } finally {
       setProcessingAI(false)
     }
@@ -394,7 +358,7 @@ export default function TeacherDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">Your Classes & Subjects</h2>
-            <p className="text-xs text-slate-500">Select a class to trigger face or voice attendance</p>
+            <p className="text-xs text-slate-500">Select a class to launch automated facial attendance</p>
           </div>
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600">
             {subjects.length} Total Subjects
@@ -493,21 +457,14 @@ export default function TeacherDashboard() {
                     Export Complete History (Excel)
                   </button>
 
-                  {/* Manual Quick Scan Buttons */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Manual Quick Face Scan Button */}
+                  <div>
                     <button
                       onClick={() => openFaceAttendance(sub)}
-                      className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-700 border border-slate-200 text-xs font-medium transition-all cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition-all cursor-pointer shadow-xs"
                     >
                       <Camera className="w-3.5 h-3.5" />
-                      Face Photo
-                    </button>
-                    <button
-                      onClick={() => openVoiceAttendance(sub)}
-                      className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-rose-700 border border-slate-200 text-xs font-medium transition-all cursor-pointer"
-                    >
-                      <Mic className="w-3.5 h-3.5" />
-                      Voice Audio
+                      Take Classroom Photo Scan
                     </button>
                   </div>
                 </div>
@@ -636,7 +593,7 @@ export default function TeacherDashboard() {
         onSuccess={fetchTeacherData}
       />
 
-      {/* Snapshot Face / Voice Scan In-Dashboard Modal */}
+      {/* Snapshot Face Scan In-Dashboard Modal */}
       {attendanceMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-xl rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 bg-white">
@@ -648,12 +605,12 @@ export default function TeacherDashboard() {
             </button>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${attendanceMode === 'face' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
-                {attendanceMode === 'face' ? <Camera className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-indigo-50 text-indigo-600 border-indigo-200">
+                <Camera className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-slate-900">
-                  {attendanceMode === 'face' ? 'Classroom Face Photo Scan' : 'Classroom Voice Audio Scan'}
+                  Classroom Face Photo Scan
                 </h3>
                 <p className="text-xs text-slate-500">
                   {activeSubject?.name} ({activeSubject?.section}) • {enrolledStudents.length} Students Target
@@ -664,16 +621,12 @@ export default function TeacherDashboard() {
             {processingAI ? (
               <div className="py-12 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                <p className="text-sm font-semibold text-slate-800">Processing biometric AI recognition...</p>
+                <p className="text-sm font-semibold text-slate-800">Processing facial AI recognition...</p>
                 <p className="text-xs text-slate-500">Analyzing faces against student registration embeddings</p>
               </div>
             ) : (
               <div>
-                {attendanceMode === 'face' ? (
-                  <CameraCapture onCapture={handleFaceCapture} label="Capture Classroom Photo" />
-                ) : (
-                  <AudioRecorder onRecordingComplete={handleVoiceRecord} />
-                )}
+                <CameraCapture onCapture={handleFaceCapture} label="Capture Classroom Photo" />
               </div>
             )}
           </div>

@@ -4,13 +4,11 @@ import {
   getStudentProfile,
   getStudentSubjects,
   getStudentAttendance,
-  extractFaceEmbedding,
-  extractVoiceEmbedding
+  extractFaceEmbedding
 } from '../lib/api'
 import CameraCapture from '../components/CameraCapture'
-import AudioRecorder from '../components/AudioRecorder'
 import EditProfileModal from '../components/EditProfileModal'
-import { BookOpen, Camera, Mic, CheckCircle2, XCircle, Clock, Calendar, Hash, Loader2, Sparkles, X, User, Edit3, ChevronRight, Layers, Award } from 'lucide-react'
+import { BookOpen, Camera, CheckCircle2, XCircle, Clock, Calendar, Hash, Loader2, Sparkles, X, User, Edit3, ChevronRight, Layers, Award } from 'lucide-react'
 
 export default function StudentDashboard() {
   const { user, setUser } = useAuth()
@@ -23,7 +21,7 @@ export default function StudentDashboard() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
 
   // Biometric registration modal
-  const [bioModal, setBioModal] = useState(null) // 'face' | 'voice' | null
+  const [bioModal, setBioModal] = useState(null) // 'face' | null
   const [bioLoading, setBioLoading] = useState(false)
 
   const fetchStudentData = async () => {
@@ -64,22 +62,7 @@ export default function StudentDashboard() {
     }
   }
 
-  const handleVoiceUpload = async (audioBlob) => {
-    setBioLoading(true)
-    try {
-      await extractVoiceEmbedding(audioBlob, user.id)
-      alert('Voice sample registered successfully!')
-      setBioModal(null)
-      fetchStudentData()
-    } catch (err) {
-      alert('Failed to register voice: ' + err.message)
-    } finally {
-      setBioLoading(false)
-    }
-  }
-
   const hasFace = !!user?.face_embedding
-  const hasVoice = !!user?.voice_embedding
 
   // Filter attendance logs by selected subject tab
   const filteredLogs = selectedSubjectFilter === 'ALL'
@@ -170,26 +153,14 @@ export default function StudentDashboard() {
 
           <button
             onClick={() => setBioModal('face')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
               hasFace
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                 : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>Face AI: {hasFace ? 'Active' : 'Missing'}</span>
-          </button>
-
-          <button
-            onClick={() => setBioModal('voice')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-              hasVoice
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            <span>Voice AI: {hasVoice ? 'Active' : 'Missing'}</span>
+            <span>Face Biometrics: {hasFace ? 'Active' : 'Missing'}</span>
           </button>
         </div>
       </div>
@@ -457,19 +428,15 @@ export default function StudentDashboard() {
             </button>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                bioModal === 'face'
-                  ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                  : 'bg-rose-50 text-rose-600 border-rose-200'
-              }`}>
-                {bioModal === 'face' ? <Camera className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-indigo-50 text-indigo-600 border-indigo-200">
+                <Camera className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-slate-900">
-                  {bioModal === 'face' ? 'Register Face Biometrics' : 'Register Voice Sample'}
+                  Register Face Biometrics
                 </h3>
                 <p className="text-xs text-slate-500">
-                  {bioModal === 'face' ? 'Take a clear portrait photo' : 'Record a 3-5 second speech sample'}
+                  Take a clear portrait photo for automated classroom attendance
                 </p>
               </div>
             </div>
@@ -478,14 +445,12 @@ export default function StudentDashboard() {
               <div className="py-12 flex flex-col items-center justify-center text-center gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
                 <div>
-                  <h4 className="font-bold text-slate-800">Extracting 128-d Embedding...</h4>
-                  <p className="text-xs text-slate-500 mt-1">Saving profile to Supabase database</p>
+                  <h4 className="font-bold text-slate-800">Extracting 128-d Face Embedding...</h4>
+                  <p className="text-xs text-slate-500 mt-1">Saving profile to PostgreSQL database</p>
                 </div>
               </div>
-            ) : bioModal === 'face' ? (
-              <CameraCapture onCapture={handleFaceUpload} label="Save Face Embedding" />
             ) : (
-              <AudioRecorder onRecordingComplete={handleVoiceUpload} label="Save Voice Sample" />
+              <CameraCapture onCapture={handleFaceUpload} label="Save Face Embedding" />
             )}
           </div>
         </div>
