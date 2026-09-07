@@ -94,13 +94,13 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
         const video = videoRef.current
         const canvas = canvasRef.current
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = 960
-          canvas.height = 720
+          canvas.width = 640
+          canvas.height = 480
           const ctx = canvas.getContext('2d')
-          ctx.drawImage(video, 0, 0, 960, 720)
+          ctx.drawImage(video, 0, 0, 640, 480)
 
           imageBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.9)
+            canvas.toBlob(resolve, 'image/jpeg', 0.82)
           })
         }
       }
@@ -149,12 +149,12 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     // Trigger instant initial scan
     setTimeout(() => {
       scanFrame()
-    }, 500)
+    }, 400)
 
-    // Run rapid frame scan every 1.5 seconds for instant attendance!
+    // Run rapid frame scan every 1.0 second for instant attendance!
     intervalRef.current = setInterval(() => {
       scanFrame()
-    }, 1500)
+    }, 1000)
 
     // Run countdown timer
     timerRef.current = setInterval(() => {
