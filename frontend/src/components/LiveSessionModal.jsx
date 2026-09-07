@@ -84,8 +84,10 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     }
   }
 
+  const sessionActiveRef = useRef(false)
+
   const scanFrame = async () => {
-    if (isScanningFrame || !sessionActive) return
+    if (isScanningFrame || !sessionActiveRef.current) return
     setIsScanningFrame(true)
 
     try {
@@ -94,11 +96,14 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       if (cameraMode === 'usb' && videoRef.current && canvasRef.current) {
         const video = videoRef.current
         const canvas = canvasRef.current
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          canvas.width = 640
-          canvas.height = 480
+        const vw = video.videoWidth || 640
+        const vh = video.videoHeight || 480
+        
+        if (vw > 0 && vh > 0) {
+          canvas.width = vw
+          canvas.height = vh
           const ctx = canvas.getContext('2d')
-          ctx.drawImage(video, 0, 0, 640, 480)
+          ctx.drawImage(video, 0, 0, vw, vh)
 
           imageBlob = await new Promise((resolve) => {
             canvas.toBlob(resolve, 'image/jpeg', 0.82)
@@ -152,6 +157,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   }
 
   const startSession = () => {
+    sessionActiveRef.current = true
     setSessionActive(true)
     setSessionCompleted(false)
     setTimeLeft(30 * 60)
@@ -165,12 +171,13 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     // Trigger instant initial scan
     setTimeout(() => {
       scanFrame()
-    }, 400)
+    }, 600)
 
-    // Run rapid frame scan every 1.0 second for instant attendance!
+    // Run rapid frame scan every 1.5 second for instant attendance!
+    if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
       scanFrame()
-    }, 1000)
+    }, 1500)
 
     // Run countdown timer
     timerRef.current = setInterval(() => {
@@ -210,6 +217,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   }
 
   const endSession = async () => {
+    sessionActiveRef.current = false
     setSessionActive(false)
     setSessionCompleted(true)
 
@@ -222,7 +230,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       const logs = (students || []).map(s => ({
         student_id: s.id,
         subject_id: subject?.id || subject?.session_id,
-        status: presentMap[s.id] ? 'present' : 'absent',
+        status: (presentMap[s.id] || presentMap[s.student_id] || (s.roll_no && presentMap[s.roll_no])) ? 'present' : 'absent',
         timestamp: new Date().toISOString()
       }))
 
@@ -241,12 +249,14 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
 
   useEffect(() => {
     if (isOpen && subject) {
+      sessionActiveRef.current = false
       setSessionActive(false)
       setSessionCompleted(false)
       setPresentMap({})
       setTimeLeft(30 * 60)
       setLastScannedTime(null)
       setStreamError(null)
+      setLiveDiagnostics(null)
     }
   }, [isOpen, subject?.id])
 
