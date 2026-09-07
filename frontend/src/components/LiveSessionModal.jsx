@@ -93,7 +93,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       if (cameraMode === 'usb' && videoRef.current && canvasRef.current) {
         const video = videoRef.current
         const canvas = canvasRef.current
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.width = 640
           canvas.height = 480
           const ctx = canvas.getContext('2d')
@@ -106,8 +106,8 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
       }
 
       if (imageBlob) {
-        const studentIds = (students || []).map(s => s.id)
-        const res = await predictFaceAttendance(imageBlob, studentIds)
+        const candidateIds = (students || []).flatMap(s => [s.id, s.student_id, s.roll_no]).filter(Boolean)
+        const res = await predictFaceAttendance(imageBlob, candidateIds)
         const detectedIds = res?.present_student_ids || []
 
         if (detectedIds && detectedIds.length > 0) {
@@ -116,10 +116,16 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
             const next = { ...prev }
             detectedIds.forEach(id => {
               next[id] = next[id] || nowStr
-              // Also map against matching student object in current class
-              const matchingStudent = (students || []).find(s => String(s.id) === String(id) || String(s.student_id) === String(id) || (s.roll_no && String(s.roll_no) === String(id)))
-              if (matchingStudent && matchingStudent.id) {
-                next[matchingStudent.id] = next[matchingStudent.id] || nowStr
+              // Also map against matching student object in current class by all identifier forms
+              const matchingStudent = (students || []).find(
+                s => String(s.id) === String(id) || 
+                     String(s.student_id) === String(id) || 
+                     (s.roll_no && String(s.roll_no) === String(id))
+              )
+              if (matchingStudent) {
+                if (matchingStudent.id) next[matchingStudent.id] = next[matchingStudent.id] || nowStr
+                if (matchingStudent.student_id) next[matchingStudent.student_id] = next[matchingStudent.student_id] || nowStr
+                if (matchingStudent.roll_no) next[matchingStudent.roll_no] = next[matchingStudent.roll_no] || nowStr
               }
             })
             return next
@@ -172,7 +178,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     const sessionFormatted = new Date().toLocaleString()
 
     const studentsWithStatus = (students || []).map(s => {
-      const markedTime = presentMap[s.id]
+      const markedTime = presentMap[s.id] || presentMap[s.student_id] || (s.roll_no && presentMap[s.roll_no])
       const isPresent = !!markedTime
       return {
         ...s,
@@ -541,12 +547,12 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
                 </div>
               ) : (
                 students.map((student) => {
-                  const markedTime = presentMap[student.id]
+                  const markedTime = presentMap[student.id] || presentMap[student.student_id] || (student.roll_no && presentMap[student.roll_no])
                   const isPresent = !!markedTime
 
                   return (
                     <div
-                      key={student.id}
+                      key={student.id || student.student_id || student.roll_no}
                       className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
                         isPresent
                           ? 'bg-emerald-50 border-emerald-200 text-emerald-950 shadow-xs'
