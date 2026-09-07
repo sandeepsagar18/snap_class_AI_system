@@ -190,12 +190,15 @@ export default function StartAttendanceConfigModal({
           </div>
 
           {existingSubjects.length > 0 && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Quick Select Saved Subject</label>
+            <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="shrink-0">
+                <label className="block text-xs font-bold text-indigo-950 mb-0.5">Quick Select Saved Subject</label>
+                <p className="text-[11px] text-slate-500 font-medium">Auto-fill details from your existing class cards</p>
+              </div>
               <select
                 onChange={(e) => handleSubjectSelect(e.target.value)}
                 defaultValue={initialSubject?.id || ''}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full sm:w-80 bg-white border border-indigo-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-medium shadow-xs"
               >
                 <option value="">-- Custom / New Subject Session --</option>
                 {existingSubjects.map((sub) => (
@@ -239,7 +242,8 @@ export default function StartAttendanceConfigModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* Course, Branch, Class/Year & Section in Balanced 4-Column Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Course</label>
               <input
@@ -252,7 +256,7 @@ export default function StartAttendanceConfigModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Branch / Department</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Branch / Dept</label>
               <div className="relative">
                 <GitBranch className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
@@ -278,19 +282,19 @@ export default function StartAttendanceConfigModal({
                 />
               </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Section</label>
-            <div className="relative">
-              <Users className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                placeholder="e.g. Section A / Section B"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
-              />
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Section</label>
+              <div className="relative">
+                <Users className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  placeholder="e.g. Section A"
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                />
+              </div>
             </div>
           </div>
 
