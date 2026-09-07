@@ -100,11 +100,11 @@ def predict_attendance(class_image_np, allowed_candidate_ids=None):
     detected_student = {}
 
     if not encodings:
-        return detected_student, [], 0
+        return detected_student, [], 0, []
 
     model_data = get_trained_model()
     if not model_data or len(model_data.get('X', [])) == 0:
-        return detected_student, [], len(encodings)
+        return detected_student, [], len(encodings), []
 
     X_train_all = model_data['X'] # Matrix: (N, 128)
     y_train_all = model_data['y'] # List of N student IDs
@@ -126,14 +126,24 @@ def predict_attendance(class_image_np, allowed_candidate_ids=None):
     all_students = list(set(y_train))
     resemblance_threshold = 0.65  # Calibrated for reliable webcam lighting variations
 
+    diagnostics = []
     for encoding in encodings:
         enc_arr = np.array(encoding, dtype=np.float32)
         distances = np.linalg.norm(X_train - enc_arr, axis=1)
 
-        # Mark all candidates within the resemblance threshold as present
-        for idx, dist in enumerate(distances):
-            if dist <= resemblance_threshold:
-                matched_id = y_train[idx]
-                detected_student[matched_id] = True
+        min_idx = int(np.argmin(distances))
+        min_dist = float(distances[min_idx])
+        matched_id = y_train[min_idx]
+        is_recognized = min_dist <= resemblance_threshold
 
-    return detected_student, all_students, len(encodings)
+        if is_recognized:
+            detected_student[matched_id] = True
+
+        diagnostics.append({
+            "student_id": matched_id,
+            "distance": round(min_dist, 4),
+            "recognized": is_recognized,
+            "threshold": resemblance_threshold
+        })
+
+    return detected_student, all_students, len(encodings), diagnostics

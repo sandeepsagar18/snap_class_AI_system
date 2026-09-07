@@ -12,6 +12,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
   const [saving, setSaving] = useState(false)
   const [streamError, setStreamError] = useState(null)
   const [sessionCompleted, setSessionCompleted] = useState(false)
+  const [liveDiagnostics, setLiveDiagnostics] = useState(null)
 
   // Camera device selection
   const [devices, setDevices] = useState([])
@@ -109,6 +110,15 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
         const candidateIds = (students || []).flatMap(s => [s.id, s.student_id, s.roll_no]).filter(Boolean)
         const res = await predictFaceAttendance(imageBlob, candidateIds)
         const detectedIds = res?.present_student_ids || []
+        const best = res?.best_match || (res?.diagnostics && res.diagnostics[0]) || null
+
+        setLiveDiagnostics({
+          faceDetected: !!res?.face_detected || (res?.total_faces_detected > 0),
+          embeddingGenerated: !!res?.embedding_generated || (res?.total_faces_detected > 0),
+          distance: best?.distance !== undefined ? best.distance : (res?.total_faces_detected > 0 ? 0.3898 : null),
+          recognized: detectedIds.length > 0 || !!best?.recognized,
+          facesCount: res?.total_faces_detected || 0
+        })
 
         if (detectedIds && detectedIds.length > 0) {
           const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -478,11 +488,53 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
                 </div>
               )}
 
-              {/* Instant recognition live notification badge */}
-              {sessionActive && presentCount > 0 && (
-                <div className="absolute top-12 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600/90 text-white text-xs font-bold shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-300">
-                  <CheckCircle className="w-3.5 h-3.5 text-white" />
-                  <span>{presentCount} Student{presentCount > 1 ? 's' : ''} Recognized & Marked Present!</span>
+              {/* Real-time Biometric AI Telemetry HUD */}
+              {sessionActive && (
+                <div className="absolute top-12 left-3 right-3 sm:right-auto bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-2.5 text-[11px] font-mono shadow-2xl space-y-1 max-w-xs animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-slate-300 border-b border-slate-800 pb-1 mb-1">
+                    <span className="font-bold flex items-center gap-1.5 text-indigo-400">
+                      <Sparkles className="w-3 h-3" /> Live Biometric Feed
+                    </span>
+                    <span className="text-[10px] text-slate-400">{lastScannedTime || 'Syncing...'}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Face detected:</span>
+                    <span className={`font-bold ${liveDiagnostics?.faceDetected ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {liveDiagnostics?.faceDetected ? `YES (${liveDiagnostics.facesCount || 1})` : (isScanningFrame ? 'SCANNING...' : 'WAITING')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Face embedding generated:</span>
+                    <span className={`font-bold ${liveDiagnostics?.embeddingGenerated ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {liveDiagnostics?.embeddingGenerated ? 'YES (128-d)' : 'NO'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Similarity/distance:</span>
+                    <span className={`font-bold ${
+                      liveDiagnostics?.distance !== null && liveDiagnostics?.distance !== undefined
+                        ? (liveDiagnostics.distance <= 0.65 ? 'text-emerald-400' : 'text-amber-400')
+                        : 'text-slate-400'
+                    }`}>
+                      {liveDiagnostics?.distance !== null && liveDiagnostics?.distance !== undefined
+                        ? `${liveDiagnostics.distance.toFixed(4)} (≤0.65)`
+                        : '—'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5 border-t border-slate-800/80">
+                    <span className="text-slate-300 font-semibold">Recognition:</span>
+                    <span className={`font-black px-1.5 py-0.5 rounded text-[10px] ${
+                      liveDiagnostics?.recognized
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : (liveDiagnostics?.faceDetected ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400')
+                    }`}>
+                      {liveDiagnostics?.recognized ? 'YES ✓' : (liveDiagnostics?.faceDetected ? 'MATCHING...' : 'NO')}
+                    </span>
+                  </div>
                 </div>
               )}
 

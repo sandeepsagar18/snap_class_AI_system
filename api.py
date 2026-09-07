@@ -612,14 +612,18 @@ async def predict_face_attendance_endpoint(file: UploadFile = File(...), candida
         except Exception:
             pass
 
-    detected_students, all_students, total_faces = predict_attendance(image_np, allowed_candidate_ids=allowed)
+    detected_students, all_students, total_faces, diagnostics = predict_attendance(image_np, allowed_candidate_ids=allowed)
     present_ids = [student_id for student_id, is_present in detected_students.items() if is_present]
     
     return {
         "success": True,
         "total_faces_detected": total_faces,
+        "face_detected": total_faces > 0,
+        "embedding_generated": total_faces > 0,
         "present_student_ids": present_ids,
         "all_enrolled_count": len(all_students),
+        "diagnostics": diagnostics,
+        "best_match": diagnostics[0] if diagnostics else None
     }
 
 @app.post("/api/voice-embedding")
