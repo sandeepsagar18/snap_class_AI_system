@@ -1,38 +1,59 @@
 import face_recognition
 import numpy as np
+import cv2
 from PIL import Image
 from src.database.db import get_all_students
+
+# Load OpenCV Cascade detector as rapid high-sensitivity fallback
+_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # Global in-memory cache for ultra-fast vectorized embeddings lookup
 _CACHE_MODEL = None
 
 def get_face_embeddings(image_np, fast_mode=True):
     """
-    Direct high-accuracy face detector and encoder.
-    Optimized for ultra-fast real-time video stream recognition (<50ms).
+    Dual-engine high-accuracy face detector & 128-d ResNet encoder.
+    Uses HOG + OpenCV Haar Cascade fallback to guarantee capturing faces
+    even under low-light, webcam tilt, or webcam compression.
     """
     if image_np is None or image_np.size == 0:
         return []
 
-    # Downscale for lightning fast HOG detection & encoding if frame is large
     h, w = image_np.shape[:2]
-    target_dim = 640.0
-    if max(w, h) > target_dim:
-        scale = target_dim / max(w, h)
-        new_w = int(w * scale)
-        new_h = int(h * scale)
-        pil_img = Image.fromarray(image_np).resize((new_w, new_h), Image.Resampling.BILINEAR)
-        proc_img = np.array(pil_img)
-    else:
-        proc_img = image_np
+    
+    # 1. First attempt: Standard HOG detector on image
+    face_locations = face_recognition.face_locations(image_np, number_of_times_to_upsample=1, model="hog")
+    
+    # 2. Second attempt: If HOG missed (due to resolution or contrast), try OpenCV Haar Cascade
+    if not face_locations:
+        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+        # Equalize histogram for instant contrast boost in dim rooms
+        equalized = cv2.equalizeHist(gray)
+        faces_cv = _CASCADE.detectMultiScale(equalized, scaleFactor=1.1, minNeighbors=4, minSize=(60, 60))
+        if len(faces_cv) > 0:
+            face_locations = [
+                (int(y), int(x + w_box), int(y + h_box), int(x))
+                for (x, y, w_box, h_box) in faces_cv
+            ]
 
-    # Detect face locations using optimized HOG detector
-    face_locations = face_recognition.face_locations(proc_img, number_of_times_to_upsample=1, model="hog")
+    # 3. Third attempt: Downscaled HOG detection
+    if not face_locations and (w > 640 or h > 480):
+        scale = 480.0 / max(w, h)
+        new_w, new_h = int(w * scale), int(h * scale)
+        small_img = cv2.resize(image_np, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+        small_locs = face_recognition.face_locations(small_img, model="hog")
+        if small_locs:
+            inv = 1.0 / scale
+            face_locations = [
+                (int(top * inv), int(right * inv), int(bottom * inv), int(left * inv))
+                for top, right, bottom, left in small_locs
+            ]
+
     if not face_locations:
         return []
 
-    # Extract 128-d face encodings with 1 jitter for maximum throughput
-    face_encodings = face_recognition.face_encodings(proc_img, face_locations, num_jitters=1)
+    # Extract 128-d face encodings
+    face_encodings = face_recognition.face_encodings(image_np, face_locations, num_jitters=1)
     return face_encodings
 
 def get_trained_model(force_refresh=False):
