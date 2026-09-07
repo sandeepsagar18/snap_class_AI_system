@@ -277,7 +277,7 @@ export default function LiveSessionModal({ isOpen, onClose, subject, students, o
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const presentCount = Object.keys(presentMap).length
+  const presentCount = (students || []).filter(s => !!(presentMap[s.id] || presentMap[s.student_id] || (s.roll_no && presentMap[s.roll_no]))).length
   const totalCount = (students || []).length
 
   return (
