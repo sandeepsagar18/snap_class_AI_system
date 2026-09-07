@@ -4,50 +4,45 @@ import cv2
 from PIL import Image
 from src.database.db import get_all_students
 
-# Load OpenCV Cascade detector as rapid high-sensitivity fallback
-_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+import dlib
+
+# Dlib frontal face detector
+_DETECTOR = dlib.get_frontal_face_detector()
 
 # Global in-memory cache for ultra-fast vectorized embeddings lookup
 _CACHE_MODEL = None
 
 def get_face_embeddings(image_np, fast_mode=True):
     """
-    Dual-engine high-accuracy face detector & 128-d ResNet encoder.
-    Uses HOG + OpenCV Haar Cascade fallback to guarantee capturing faces
-    even under low-light, webcam tilt, or webcam compression.
+    Multi-pass high-accuracy face detector & 128-d ResNet encoder.
+    Guarantees capturing faces even under low-light, webcam tilt, or compression.
     """
     if image_np is None or image_np.size == 0:
         return []
 
     h, w = image_np.shape[:2]
     
-    # 1. First attempt: Standard HOG detector on image
-    face_locations = face_recognition.face_locations(image_np, number_of_times_to_upsample=1, model="hog")
+    # 1. Standard HOG detector on image
+    face_locations = face_recognition.face_locations(image_np, number_of_times_to_upsample=0, model="hog")
     
-    # 2. Second attempt: If HOG missed (due to resolution or contrast), try OpenCV Haar Cascade
+    # 2. If missed, try with 1x upsampling (high sensitivity for smaller/distant faces)
     if not face_locations:
-        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-        # Equalize histogram for instant contrast boost in dim rooms
-        equalized = cv2.equalizeHist(gray)
-        faces_cv = _CASCADE.detectMultiScale(equalized, scaleFactor=1.1, minNeighbors=4, minSize=(60, 60))
-        if len(faces_cv) > 0:
-            face_locations = [
-                (int(y), int(x + w_box), int(y + h_box), int(x))
-                for (x, y, w_box, h_box) in faces_cv
-            ]
+        face_locations = face_recognition.face_locations(image_np, number_of_times_to_upsample=1, model="hog")
 
-    # 3. Third attempt: Downscaled HOG detection
-    if not face_locations and (w > 640 or h > 480):
-        scale = 480.0 / max(w, h)
-        new_w, new_h = int(w * scale), int(h * scale)
-        small_img = cv2.resize(image_np, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-        small_locs = face_recognition.face_locations(small_img, model="hog")
-        if small_locs:
-            inv = 1.0 / scale
-            face_locations = [
-                (int(top * inv), int(right * inv), int(bottom * inv), int(left * inv))
-                for top, right, bottom, left in small_locs
-            ]
+    # 3. If still missed (e.g. low contrast / shadows), apply CLAHE contrast enhancement
+    if not face_locations:
+        try:
+            gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            cl_img = clahe.apply(gray)
+            rects = _DETECTOR(cl_img, 1)
+            if rects:
+                face_locations = [
+                    (int(r.top()), int(r.right()), int(r.bottom()), int(r.left()))
+                    for r in rects
+                ]
+        except Exception:
+            pass
 
     if not face_locations:
         return []
