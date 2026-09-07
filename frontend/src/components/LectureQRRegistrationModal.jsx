@@ -150,17 +150,17 @@ export default function LectureQRRegistrationModal({
   const totalRegistered = currentStudents.length
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="glass-panel w-full max-w-xl rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[94vh] overflow-y-auto bg-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm">
+      <div className="glass-panel w-full max-w-4xl rounded-3xl p-6 sm:p-8 md:p-9 border border-slate-200 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[94vh] overflow-y-auto bg-white">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition-all cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0 shadow-xs">
             <QrCode className="w-6 h-6" />
           </div>
           <div>
@@ -173,7 +173,7 @@ export default function LectureQRRegistrationModal({
             <h3 className="font-extrabold text-lg text-slate-900">
               {session.subject_name} ({session.subject_code})
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 font-medium">
               Teacher: <b className="text-slate-800">{session.teacher_name}</b> • Faculty: <b className="text-indigo-600">{session.faculty_name || 'Computing'}</b> • Class: <b className="text-slate-800">{session.class_name} ({session.section})</b>
             </p>
           </div>
@@ -204,152 +204,162 @@ export default function LectureQRRegistrationModal({
         </div>
 
         {mode === 'qr' ? (
-          <div className="flex flex-col items-center text-center space-y-4">
-            {/* Network Access Mode Switcher */}
-            <div className="w-full rounded-2xl bg-slate-50 border border-slate-200 p-3 text-xs text-left space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-800 font-bold">
-                  <Signal className="w-4 h-4 text-indigo-600" />
-                  <span>Network Access Mode:</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LEFT COLUMN: Network Config & Access Instructions (6 Cols) */}
+            <div className="lg:col-span-6 space-y-4 text-left">
+              {/* Network Access Mode Switcher */}
+              <div className="w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-800 font-bold">
+                    <Signal className="w-4 h-4 text-indigo-600" />
+                    <span>Network Access Mode:</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNetworkSettings(!showNetworkSettings)}
+                    className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    <span>{showNetworkSettings ? 'Hide Options' : 'Configure Network'}</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowNetworkSettings(!showNetworkSettings)}
-                  className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>{showNetworkSettings ? 'Hide Options' : 'Configure Network'}</span>
-                </button>
+
+                {/* Mode Toggle Chips */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setUsePublicUrl(false)}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-bold cursor-pointer transition-all ${
+                      !usePublicUrl
+                        ? 'bg-emerald-100 border-emerald-300 text-emerald-800 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Wifi className="w-3.5 h-3.5" />
+                    <span>Wi-Fi ({networkHost})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsePublicUrl(true)
+                      setShowNetworkSettings(true)
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-bold cursor-pointer transition-all ${
+                      usePublicUrl
+                        ? 'bg-indigo-100 border-indigo-300 text-indigo-800 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>All Networks (4G/5G)</span>
+                  </button>
+                </div>
+
+                {/* Expanded Network Settings */}
+                {showNetworkSettings && (
+                  <div className="pt-2.5 border-t border-slate-200 space-y-2 text-[11px]">
+                    {usePublicUrl ? (
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          Public Tunnel / Domain URL (for Mobile Phone 4G/5G Network):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. https://your-tunnel.loca.lt"
+                          value={publicDomain}
+                          onChange={(e) => handleSavePublicDomain(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">
+                          Enter your Cloudflare, Ngrok, or deployed server link to allow students on cellular mobile data (Jio, Airtel, etc.) to scan from anywhere!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-700 font-bold">Select Local IP:</span>
+                        <select
+                          value={networkHost}
+                          onChange={(e) => setNetworkHost(e.target.value)}
+                          className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 font-mono focus:outline-none focus:border-indigo-500 font-bold"
+                        >
+                          {availableIps.map((ip) => (
+                            <option key={ip} value={ip}>{ip} (Wi-Fi/Hotspot)</option>
+                          ))}
+                          <option value="localhost">localhost</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Mode Toggle Chips */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setUsePublicUrl(false)}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-all ${
-                    !usePublicUrl
-                      ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Wifi className="w-3.5 h-3.5" />
-                  <span>Wi-Fi / Hotspot ({networkHost})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsePublicUrl(true)
-                    setShowNetworkSettings(true)
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-all ${
-                    usePublicUrl
-                      ? 'bg-indigo-100 border-indigo-300 text-indigo-800'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>All Networks (4G/5G/Anywhere)</span>
-                </button>
+              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1.5 text-xs text-slate-700">
+                <div className="flex items-center gap-1.5 font-bold text-indigo-900">
+                  <Smartphone className="w-4 h-4 text-indigo-600" />
+                  <span>Student Instant Joining</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  {usePublicUrl
+                    ? 'Students on ANY network (Wi-Fi, Hotspot, 4G, 5G) can point their phone camera at the QR code to register their details and live face photo.'
+                    : 'Students connected to the classroom Wi-Fi or mobile hotspot can scan the QR code to register.'}
+                </p>
               </div>
 
-              {/* Expanded Network Settings */}
-              {showNetworkSettings && (
-                <div className="pt-2 border-t border-slate-200 space-y-2 text-[11px]">
-                  {usePublicUrl ? (
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">
-                        Public Tunnel / Domain URL (for Mobile Phone 4G/5G Network):
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. https://your-tunnel.loca.lt or https://snapclass.yourcollege.edu"
-                        value={publicDomain}
-                        onChange={(e) => handleSavePublicDomain(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Enter your Cloudflare, Ngrok, or deployed server link to allow students on cellular mobile data (Jio, Airtel, etc.) to scan from anywhere!
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-700 font-bold">Select Local IP:</span>
-                      <select
-                        value={networkHost}
-                        onChange={(e) => setNetworkHost(e.target.value)}
-                        className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 font-mono focus:outline-none focus:border-indigo-500 font-bold"
-                      >
-                        {availableIps.map((ip) => (
-                          <option key={ip} value={ip}>{ip} (Wi-Fi/Hotspot)</option>
-                        ))}
-                        <option value="localhost">localhost</option>
-                      </select>
-                    </div>
-                  )}
+              <div className="w-full flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <input
+                  type="text"
+                  readOnly
+                  value={registrationUrl}
+                  className="flex-1 bg-transparent px-2 text-slate-800 font-mono text-[11px] outline-none truncate font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer shrink-0"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied' : 'Copy Link'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Projector QR & Live Updating Roster (6 Cols) */}
+            <div className="lg:col-span-6 flex flex-col items-center text-center space-y-4">
+              <div className="p-4 bg-white rounded-3xl shadow-lg border-2 border-indigo-200 inline-block">
+                <QRCodeSVG
+                  value={registrationUrl}
+                  size={240}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+
+              {/* Live registered roster preview chips */}
+              {currentStudents.length > 0 ? (
+                <div className="w-full text-left p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                      Live Registered Students ({currentStudents.length})
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Updating
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                    {currentStudents.map((st, idx) => (
+                      <span key={st.id || idx} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-800 font-bold shadow-xs">
+                        ✓ {st.name} {st.roll_no ? `(${st.roll_no})` : ''}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-500 font-medium">
+                  Waiting for students to scan and register...
                 </div>
               )}
             </div>
-
-            <div className="p-4 bg-white rounded-3xl shadow-md border-2 border-indigo-200 inline-block">
-              <QRCodeSVG
-                value={registrationUrl}
-                size={220}
-                level="H"
-                includeMargin={true}
-              />
-            </div>
-
-            <div className="space-y-1 max-w-sm">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-700">
-                <Smartphone className="w-4 h-4" />
-                <span>Accessible by Any Smartphone</span>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                {usePublicUrl
-                  ? 'Students on ANY network (Wi-Fi, 4G, 5G) can scan this QR code to register their details & selfie.'
-                  : 'Students connected to the classroom Wi-Fi or Mobile Hotspot can scan this QR code.'}
-              </p>
-            </div>
-
-            <div className="w-full flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <input
-                type="text"
-                readOnly
-                value={registrationUrl}
-                className="flex-1 bg-transparent px-2 text-slate-800 font-mono text-[11px] outline-none truncate font-medium"
-              />
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer shrink-0"
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy Link'}</span>
-              </button>
-            </div>
-
-            {/* Live registered roster preview chips */}
-            {currentStudents.length > 0 && (
-              <div className="w-full text-left p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
-                    Live Registered Students ({currentStudents.length})
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Updating
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                  {currentStudents.map((st, idx) => (
-                    <span key={st.id || idx} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] text-slate-800 font-bold">
-                      ✓ {st.name} {st.roll_no ? `(${st.roll_no})` : ''}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <form onSubmit={handleManualRegister} className="space-y-3.5">
