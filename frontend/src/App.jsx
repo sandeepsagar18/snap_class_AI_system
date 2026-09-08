@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
-import Footer from './components/Footer'
 import LandingPage from './pages/LandingPage'
 import TeacherDashboard from './pages/TeacherDashboard'
 import StudentDashboard from './pages/StudentDashboard'
@@ -59,7 +58,6 @@ export default function App() {
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <MainContent />
         </main>
-        <Footer />
       </div>
     </AuthProvider>
   )
