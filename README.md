@@ -1,4 +1,4 @@
-# 🎓 SnapClass AI - Next-Gen Smart Facial Recognition Attendance System
+# 🎓 SnapClass AI — Next-Gen Smart Facial Recognition Attendance System
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
@@ -7,7 +7,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare_Tunnel-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://cloudflare.com/)
 
-**SnapClass AI** is a state-of-the-art AI-powered smart classroom attendance and analytics platform. Built with **FastAPI**, **Deep Face Recognition (128-d Biometric Embeddings)**, **React + Vite**, and **PostgreSQL**, SnapClass AI automates student verification, eliminates proxy attendance, and exports comprehensive semester-level attendance dossiers with a single click.
+**SnapClass AI** is a state-of-the-art AI-powered smart classroom attendance and analytics platform. Built with **FastAPI**, **Deep Face Recognition (128-d Biometric Embeddings)**, **React + Vite**, and **PostgreSQL**, SnapClass AI automates student verification, completely eliminates proxy attendance, and exports comprehensive semester-level attendance dossiers with a single click.
 
 ---
 
@@ -19,14 +19,18 @@
 
 ### 2. 📱 Universal Mobile QR Registration (All Networks Supported)
 - **Multi-Network Support**: Students can scan the QR code from **any network** — classroom Wi-Fi, mobile hotspot, or **cellular 4G/5G mobile data (Jio, Airtel, Vi)** via built-in Cloudflare tunnel reverse proxy.
-- **Dedicated In-Class Card**: Scanning the QR code opens only the clean, focused student registration card (no extra dashboard clutter).
-- **Selfie Biometric Capture**: Students snap a live selfie photo via their native smartphone camera.
+- **Dedicated In-Class Card**: Scanning the QR code opens only the clean, focused student registration card (no dashboard clutter).
+- **Selfie Biometric Capture**: Students snap a live selfie photo via their smartphone camera.
 - **Smart Memory Auto-Fill**: Student details (Roll No, Name, Branch, Section) are remembered locally on their device for 1-click registration in all future lectures.
 
-### 3. 🤖 High-Accuracy Biometric Face Recognition
-- Generates **128-dimensional facial embedding vectors** using deep metric learning (`dlib` + ResNet).
-- Real-time frame analysis with multi-face detection, bounding boxes, and dynamic cosine similarity thresholding ($< 0.45$ distance).
-- Instant model retraining on the fly whenever a new student joins the roster.
+### 3. 🤖 High-Accuracy Biometric Face Recognition & Telemetry HUD
+- Generates **128-dimensional facial embedding vectors** using deep metric learning (`dlib` + ResNet-34).
+- **Real-Time On-Screen Telemetry HUD**: Shows live visual metrics during camera scans:
+  - **Face detected**: `YES (count)` / `SCANNING`
+  - **Face embedding generated**: `YES (128-d)`
+  - **Similarity/distance**: `0.3898 (≤0.65)`
+  - **Recognition**: `YES ✓` (instant roster update)
+- **Contrast Normalization (CLAHE)** & **Kazemi-Sullivan 68-Point Landmark Alignment** for angled/distant student faces.
 
 ### 4. 📊 Dynamic Roster Querying & Verification
 - Filter students dynamically by **Course**, **Branch**, **Class/Academic Year**, and **Section**.
@@ -68,7 +72,7 @@ flowchart TD
     subgraph Backend["FastAPI AI Engine (Python 3.13)"]
         B1["/api/lecture-sessions/create"]
         B2["/api/lecture-sessions/{id}/register-student"]
-        B3["128-d Face Embedding Generator (dlib)"]
+        B3["128-d Face Embedding Generator (dlib + ResNet)"]
         B4["/api/predict-face-attendance"]
     end
 
@@ -89,10 +93,28 @@ flowchart TD
     B2 -.->|Real-time Poll| T2
     T2 --> T3
     T3 -->|Live Video Frames| B4
-    B4 -->|Face Match Algorithm| DB1
+    B4 -->|Euclidean Distance Matrix Match| DB1
     B4 --> DB3
     T3 --> T4
 ```
+
+---
+
+## 🔬 AI Facial Recognition Architecture & Mathematics
+
+```
+Camera Frame ──► 1. CLAHE & HOG Detection ──► 2. 68-Point Landmark Alignment
+                                                          │
+   Match Decision ◄── 4. L2 Euclidean Distance ◄── 3. ResNet-34 128-d Vector
+```
+
+1. **Face Detection**: HOG (Histogram of Oriented Gradients) + Linear SVM with CLAHE contrast enhancement.
+2. **Landmark Alignment**: Kazemi-Sullivan 68-point shape predictor to normalize head tilt and roll.
+3. **Feature Extraction**: Deep Residual Neural Network (ResNet-34) extracting 128-dimensional normalized unit vectors:
+   $$\mathbf{e} = [v_1, v_2, \dots, v_{128}] \in \mathbb{R}^{128} \quad \text{where } \|\mathbf{e}\|_2 = 1$$
+4. **Vector Distance Matching**: $L_2$ Euclidean Metric:
+   $$d(\mathbf{e}_{\text{live}}, \mathbf{e}_{\text{db}}) = \sqrt{\sum_{i=1}^{128} (e_{\text{live}, i} - e_{\text{db}, i})^2}$$
+   Threshold: $d \le 0.65$ ($\approx 0.38$ average match distance).
 
 ---
 
@@ -118,7 +140,7 @@ venv\Scripts\activate      # Windows
 # source venv/bin/activate # Linux / macOS
 
 # Install dependencies
-pip install fastapi uvicorn dlib face_recognition pillow numpy supabase bcrypt python-multipart openpyxl
+pip install fastapi uvicorn dlib face_recognition pillow numpy supabase bcrypt python-multipart openpyxl reportlab
 ```
 
 Configure your environment variables in `.env`:
@@ -149,27 +171,29 @@ Access the application in your browser:
 
 ```
 snap_class_AI_system/
-├── api.py                          # FastAPI server & biometric AI recognition endpoints
+├── api.py                                              # FastAPI server & biometric AI recognition endpoints
+├── SnapClass_AI_Faculty_Guide_and_Project_Report.pdf   # Formatted 2-page project documentation PDF
 ├── src/
 │   ├── database/
-│   │   └── db.py                   # Supabase PostgreSQL database operations
-│   └── models/                     # Deep learning face recognition models & embeddings
+│   │   └── db.py                                       # Supabase PostgreSQL database operations
+│   └── pipelines/
+│       └── face_pipeline.py                            # Multi-pass face detection, alignment & 128-d vectors
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── StartAttendanceConfigModal.jsx   # Pre-session teacher & subject configuration
-│   │   │   ├── LectureQRRegistrationModal.jsx   # Dynamic QR projector & real-time roster sync
-│   │   │   ├── StudentLectureJoinView.jsx       # Dedicated student mobile registration view
-│   │   │   ├── CameraCapture.jsx                # Native mobile camera & webcam photo capture
-│   │   │   ├── LiveSessionModal.jsx             # Live stream face detection & verification
-│   │   │   └── AttendanceResultModal.jsx        # Snapshot attendance & override modal
+│   │   │   ├── StartAttendanceConfigModal.jsx          # Pre-session teacher & subject configuration
+│   │   │   ├── LectureQRRegistrationModal.jsx          # Dynamic QR projector & real-time roster sync
+│   │   │   ├── StudentLectureJoinView.jsx              # Dedicated student mobile registration view
+│   │   │   ├── CameraCapture.jsx                       # Native mobile camera & webcam photo capture
+│   │   │   ├── LiveSessionModal.jsx                    # Live stream face detection, HUD & verification
+│   │   │   └── AttendanceResultModal.jsx               # Snapshot attendance & override modal
 │   │   ├── pages/
-│   │   │   ├── TeacherDashboard.jsx             # Teacher control center & analytics
-│   │   │   ├── StudentDashboard.jsx             # Student attendance portal & history
-│   │   │   └── LandingPage.jsx                  # Main authentication landing page
+│   │   │   ├── TeacherDashboard.jsx                    # Teacher control center & analytics
+│   │   │   ├── StudentDashboard.jsx                    # Student attendance portal & history
+│   │   │   └── LandingPage.jsx                         # Main authentication landing page
 │   │   └── lib/
-│   │       ├── api.js                           # API client with automatic reverse proxy
-│   │       └── excelExport.js                   # Multi-sheet semester Excel report generator
+│   │       ├── api.js                                  # API client with automatic reverse proxy
+│   │       └── excelExport.js                          # Multi-sheet semester Excel report generator
 │   ├── package.json
 │   └── vite.config.js
 ├── README.md
