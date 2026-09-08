@@ -14,8 +14,9 @@ import AddStudentModal from '../components/AddStudentModal'
 import LiveSessionModal from '../components/LiveSessionModal'
 import StartAttendanceConfigModal from '../components/StartAttendanceConfigModal'
 import LectureQRRegistrationModal from '../components/LectureQRRegistrationModal'
+import SubjectAttendanceHistoryModal from '../components/SubjectAttendanceHistoryModal'
 import CameraCapture from '../components/CameraCapture'
-import { Plus, BookOpen, Users, Camera, Share2, Calendar, CheckCircle2, RefreshCw, Loader2, Sparkles, X, Video, FileSpreadsheet, Download, Play, Sliders, QrCode, Square, Radio } from 'lucide-react'
+import { Plus, BookOpen, Users, Camera, Share2, Calendar, CheckCircle2, RefreshCw, Loader2, Sparkles, X, Video, FileSpreadsheet, Download, Play, Sliders, QrCode, Square, Radio, History } from 'lucide-react'
 import { exportSubjectLogsToExcel, exportClassFullHistoryToExcel, exportAttendanceToExcel } from '../lib/excelExport'
 
 export default function TeacherDashboard() {
@@ -31,6 +32,7 @@ export default function TeacherDashboard() {
   const [shareSubject, setShareSubject] = useState(null)
   const [activeSubject, setActiveSubject] = useState(null)
   const [liveSubject, setLiveSubject] = useState(null)
+  const [historySubject, setHistorySubject] = useState(null)
 
   // Active Lecture Session Card
   const [activeLectureSession, setActiveLectureSession] = useState(null)
@@ -387,33 +389,39 @@ export default function TeacherDashboard() {
             {subjects.map((sub) => (
               <div
                 key={sub.id}
-                className="glass-card rounded-2xl p-5 border border-slate-200 flex flex-col justify-between hover:border-indigo-300 transition-all group bg-white shadow-xs"
+                className="glass-card rounded-2xl p-5 border border-slate-200 flex flex-col justify-between hover:border-indigo-400 hover:shadow-md transition-all group bg-white shadow-xs cursor-pointer"
+                onClick={() => setHistorySubject(sub)}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200">
+                    <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
                       {sub.subject_code}
                     </span>
-                    <button
-                      onClick={() => setShareSubject(sub)}
-                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-indigo-600 text-slate-500 hover:text-white border border-slate-200 transition-all cursor-pointer"
-                      title="Share Join Code / QR"
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setShareSubject(sub)}
+                        className="p-1.5 rounded-lg bg-slate-50 hover:bg-indigo-600 text-slate-500 hover:text-white border border-slate-200 transition-all cursor-pointer"
+                        title="Share Join Code / QR"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                     {sub.name}
                   </h3>
-                  <div className="text-xs text-slate-500 mt-0.5 mb-4">
-                    Section: <span className="text-slate-800 font-semibold">{sub.section}</span>
+                  <div className="text-xs text-slate-500 mt-0.5 mb-4 flex items-center justify-between">
+                    <span>Section: <strong className="text-slate-800">{sub.section}</strong></span>
+                    <span className="text-[11px] text-indigo-600 font-bold group-hover:underline flex items-center gap-1">
+                      <History className="w-3 h-3" /> View Attendance History
+                    </span>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5" onClick={(e) => e.stopPropagation()}>
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-emerald-600" />
                       <div>
@@ -425,48 +433,28 @@ export default function TeacherDashboard() {
                       <Calendar className="w-4 h-4 text-violet-600" />
                       <div>
                         <div className="font-bold text-slate-900">{sub.total_classes || 0}</div>
-                        <div className="text-[10px] text-slate-500">Sessions</div>
+                        <div className="text-[10px] text-slate-500">Total Sessions</div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Live 30-Min Streaming Attendance */}
+                  {/* Primary Live 30-Min Streaming Attendance */}
                   <button
                     onClick={() => openLiveSession(sub)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition-all shadow-sm shadow-indigo-500/20 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-sm shadow-indigo-500/20 cursor-pointer"
                   >
                     <Video className="w-3.5 h-3.5" />
                     Start 30-Min Live Attendance
                   </button>
 
-                  {/* Export Full Class History Button */}
+                  {/* View Attendance Records (Today & Past) */}
                   <button
-                    onClick={async () => {
-                      try {
-                        const studentsInSub = await getSubjectStudents(sub.id)
-                        const subLogs = recentLogs.filter(l => l.subjects?.subject_code === sub.subject_code || l.subjects?.name === sub.name)
-                        exportClassFullHistoryToExcel(sub, studentsInSub, subLogs)
-                      } catch (err) {
-                        console.error('Error exporting class history:', err)
-                        exportClassFullHistoryToExcel(sub, [], [])
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-all cursor-pointer"
+                    onClick={() => setHistorySubject(sub)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    Export Complete History (Excel)
+                    <History className="w-3.5 h-3.5 text-indigo-600" />
+                    View Today & Past Attendance
                   </button>
-
-                  {/* Manual Quick Face Scan Button */}
-                  <div>
-                    <button
-                      onClick={() => openFaceAttendance(sub)}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      Take Classroom Photo Scan
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
@@ -573,6 +561,13 @@ export default function TeacherDashboard() {
         isOpen={!!shareSubject}
         onClose={() => setShareSubject(null)}
         subject={shareSubject}
+      />
+
+      {/* Subject Attendance History & Date/Branch Filter Modal */}
+      <SubjectAttendanceHistoryModal
+        isOpen={!!historySubject}
+        onClose={() => setHistorySubject(null)}
+        subject={historySubject}
       />
 
       <LiveSessionModal

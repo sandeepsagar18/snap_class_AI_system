@@ -184,6 +184,16 @@ def insert_attendance_log(subject_id, student_id, timestamp, status):
 
 def get_attendance_for_teacher(teacher_id):
     response = supabase.table('attendance_logs').select(
-        'id, timestamp, status, subjects!inner(name, subject_code, section, teacher_id), students(name)'
-    ).eq('subjects.teacher_id', teacher_id).order('timestamp', desc=True).limit(20).execute()
+        'id, timestamp, status, subjects!inner(name, subject_code, section, teacher_id), students(name, roll_no, branch, class_name, section)'
+    ).eq('subjects.teacher_id', teacher_id).order('timestamp', desc=True).limit(500).execute()
     return response.data
+
+def get_subject_attendance_history(subject_id):
+    try:
+        response = supabase.table('attendance_logs').select(
+            'id, student_id, timestamp, status, students(id, name, roll_no, email, branch, class_name, section)'
+        ).eq('subject_id', subject_id).order('timestamp', desc=True).execute()
+        return response.data or []
+    except Exception as e:
+        print("get_subject_attendance_history error:", e)
+        return []

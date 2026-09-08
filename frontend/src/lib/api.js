@@ -137,6 +137,13 @@ export async function getTeacherLogs(teacherId) {
   return data.logs
 }
 
+export async function getSubjectAttendanceHistory(subjectId) {
+  const res = await fetch(`${API_BASE_URL}/subjects/${subjectId}/attendance-history`)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.detail || 'Failed to fetch subject attendance history')
+  return data
+}
+
 export async function enrollStudentInSubject(studentId, subjectId) {
   const res = await fetch(`${API_BASE_URL}/student/${studentId}/enroll`, {
     method: 'POST',

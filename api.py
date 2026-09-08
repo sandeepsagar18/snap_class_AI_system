@@ -26,6 +26,7 @@ from src.database.db import (
     enroll_student_to_subject,
     insert_attendance_log,
     get_attendance_for_teacher,
+    get_subject_attendance_history,
 )
 
 CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "student_credentials.json")
@@ -253,6 +254,12 @@ def create_subject_api(payload: Dict[str, Any] = Body(...)):
 def teacher_logs_api(teacher_id: str):
     logs = get_attendance_for_teacher(teacher_id)
     return {"success": True, "logs": logs}
+
+@app.get("/api/subjects/{subject_id}/attendance-history")
+def subject_attendance_history_api(subject_id: str):
+    logs = get_subject_attendance_history(subject_id)
+    students = get_subject_students(subject_id)
+    return {"success": True, "logs": logs, "students": students}
 
 # --- SECURE STUDENT ENDPOINTS ---
 
